@@ -8,7 +8,6 @@ import re
 
 # TODO:
 #
-# - Delete individual patterns.
 # - Move to static frontend with API.
 # - External storage of db. (Real db)
 
@@ -49,6 +48,17 @@ def delete(name):
     del redirects[name]
     save_db(redirects)
     return "Deleted"
+
+@app.route("/_/<name>/<path:pattern>", methods=['DELETE'])
+def delete_pattern(name, pattern):
+    d = redirects[name]
+    n = count_args(pattern)
+    if n in d and d[n] == pattern:
+        del d[n]
+        save_db(redirects)
+        return "Deleted pattern", 200
+    else:
+        return "Can't find pattern", 404
 
 
 @app.route("/<name>/", defaults={'rest': None})
