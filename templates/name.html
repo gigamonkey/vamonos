@@ -9,17 +9,12 @@
       {% for n in patterns %}
       <li>args: {{ n }} &mdash; {{ patterns[n] }}</li>
       {% endfor %}
+      <li>
+        <form method='POST' action='/_/{{ name }}'>
+          <input id='url' type='text' name='url' size='100'/>
+          <input type='hidden' name='name' value='{{ name }}'/>
+        </form>
+      </li>
     </ul>
-
-    <h2>Add another?</h2>
-    <form method='POST' action='/$create$/'>
-      <p>
-        <input id='url' type='text' name='url' size='100'/>
-      </p>
-      <p>
-        <input type='hidden' name='name' value='{{ name }}'/>
-        <input id='submit' type='submit'/>
-      </p>
-    </form>
   </body>
 </html>

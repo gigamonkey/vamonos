@@ -10,20 +10,18 @@ redirects = defaultdict(dict)
 redirects['goog'][0] = 'https://www.google.com/'
 redirects['goog'][1] = 'https://www.google.com/search?q={}'
 
-@app.route("/$create$/", methods=['POST'])
-def create():
-    name    = request.form['name']
+@app.route("/_/<name>", methods=['GET'])
+def show(name):
+    return render_template('name.html', name=name, patterns=redirects[name])
+
+@app.route("/_/<name>", methods=['POST'])
+def create(name):
     pattern = request.form['url']
     try:
         redirects[name][count_args(pattern)] = pattern
         return redirect('/_/' + name)
     except ValueError as e:
         return str(e)
-
-@app.route("/_/<name>")
-def show_name(name):
-    return render_template('name.html', name=name, patterns=redirects[name])
-
 
 @app.route("/<name>/", defaults={'rest': None})
 @app.route("/<name>/<path:rest>")
@@ -33,7 +31,7 @@ def redirection(name, rest):
         args = rest.split('/') if rest else []
         return redirect(redirects[name][len(args)].format(*args), code=307)
     else:
-        return render_template('missing.html', name=name)
+        return redirect('/_/' + name)
 
 
 def depunctuate(name):
