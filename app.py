@@ -1,5 +1,6 @@
 from collections import defaultdict
 from flask import Flask, redirect, render_template, request
+import json
 import re
 
 # We use HTTP 307 mainly so the redirection can change. This also
@@ -7,7 +8,7 @@ import re
 
 # TODO:
 #
-# - External storage of db. (JSON)
+# - Delete patterns and whole names.
 # - Move to static frontend with API.
 # - External storage of db. (Real db)
 
@@ -15,9 +16,12 @@ app = Flask(__name__)
 
 app.config['DEBUG'] = True
 
-redirects = defaultdict(dict)
-redirects['goog'][0] = 'https://www.google.com/'
-redirects['goog'][1] = 'https://www.google.com/search?q={}'
+redirects = None
+
+@app.before_first_request
+def _run_on_start():
+    global redirects
+    redirects = load_db()
 
 @app.route("/")
 def home():
@@ -35,6 +39,7 @@ def manage(name):
             redirects[name][count_args(pattern)] = pattern
         except ValueError as e:
             error = str(e)
+        save_db(redirects)
 
     patterns = sorted(redirects[name].items())
     return render_template('name.html', name=name, patterns=patterns, error=error)
@@ -57,3 +62,19 @@ def count_args(pattern):
         return 1 + max(int(x.strip('{}')) for x in numbered_pats)
     else:
         return len(auto_pats)
+
+
+#
+# DB
+#
+
+def save_db(db):
+    with open("db.json", "w") as f: json.dump(db, f)
+
+def load_db():
+    with open("db.json") as f: raw = json.load(f)
+    db = defaultdict(dict)
+    for (name, patterns) in raw.items():
+        for (n, pattern) in patterns.items():
+            db[name][int(n)] = pattern
+    return db
