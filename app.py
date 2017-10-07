@@ -14,8 +14,15 @@ redirects['goog'][1] = 'https://www.google.com/search?q={}'
 def create():
     name    = request.form['name']
     pattern = request.form['url']
-    redirects[name][count_args(pattern)] = pattern
-    return redirect('/' + request.form['name'], code=302)
+    try:
+        redirects[name][count_args(pattern)] = pattern
+        return redirect('/_/' + name)
+    except ValueError as e:
+        return str(e)
+
+@app.route("/_/<name>")
+def show_name(name):
+    return render_template('name.html', name=name, patterns=redirects[name])
 
 
 @app.route("/<name>/", defaults={'rest': None})
@@ -34,4 +41,12 @@ def depunctuate(name):
 
 
 def count_args(pattern):
-    return len(re.findall('{\d*}', pattern))
+    numbered_pats = re.findall('{\d+}', pattern)
+    auto_pats     = re.findall('{}', pattern)
+
+    if numbered_pats and auto_pats:
+        raise ValueError("Can't mix explictly numbered and auto-numbered patterns.")
+    elif numbered_pats:
+        return 1 + max(int(x.strip('{}')) for x in numbered_pats)
+    else:
+        return len(auto_pats)
