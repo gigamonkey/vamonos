@@ -13,7 +13,8 @@ def hello():
 
 @app.route("/API/create/", methods=['POST'])
 def create():
-    return request.form['url']
+    redirects[request.form['shortname']] = request.form['url']
+    return redirect('/' + request.form['shortname'], code=302, Response=None)
 
 @app.route("/<shortname>")
 def redirection(shortname):
