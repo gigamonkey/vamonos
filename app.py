@@ -1,4 +1,4 @@
-from flask import Flask, redirect
+from flask import Flask, redirect, render_template
 
 app = Flask(__name__)
 
@@ -11,4 +11,7 @@ def hello():
 
 @app.route("/<shortname>")
 def redirection(shortname):
-    return redirect(redirects[shortname], code=307, Response=None)
+    if shortname in redirects:
+        return redirect(redirects[shortname], code=307, Response=None)
+    else:
+        return render_template('missing.html', shortname=shortname)
