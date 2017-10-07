@@ -2,8 +2,15 @@ from collections import defaultdict
 from flask import Flask, redirect, render_template, request
 import re
 
-# We use HTTP 307 in order to continue to get a chance to see people
-# using go links, mainly so the redirection can change.
+# We use HTTP 307 mainly so the redirection can change. This also
+# allows us to log the use of links.
+
+# TODO:
+#
+# - Something at /
+# - Move to static frontend with API.
+# - External storage of db. (JSON)
+# - External storage of db. (Real db)
 
 app = Flask(__name__)
 
@@ -33,10 +40,7 @@ def manage(name):
 def redirection(name, rest):
     name = ''.join(filter(str.isalnum, name))
     args = rest.split('/') if rest else []
-    if len(args) in redirects[name]:
-        return redirect(redirects[name][len(args)].format(*args), code=307)
-    else:
-        return redirect('/_/' + name)
+    redirect(redirects[name][len(args)].format(*args) if len(args) in redirects[name] else '/_/' + name)
 
 def count_args(pattern):
     numbered_pats = re.findall('{\d+}', pattern)
