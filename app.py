@@ -2,6 +2,8 @@ from flask import Flask, redirect, render_template
 
 app = Flask(__name__)
 
+app.config['DEBUG'] = True
+
 redirects = {}
 redirects['goog'] = 'https://google.com'
 
