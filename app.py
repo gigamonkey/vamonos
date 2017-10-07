@@ -5,7 +5,8 @@ app = Flask(__name__)
 app.config['DEBUG'] = True
 
 redirects = {}
-redirects['goog'] = 'https://google.com'
+redirects['goog'] = 'https://www.google.com/search?q={}'
+
 
 @app.route("/$create$/", methods=['POST'])
 def create():
@@ -13,11 +14,13 @@ def create():
     return redirect('/' + request.form['name'], code=302)
 
 
-@app.route("/<name>")
-def redirection(name):
+@app.route("/<name>/", defaults={'rest': None})
+@app.route("/<name>/<path:rest>")
+def redirection(name, rest):
     name = depunctuate(name)
     if name in redirects:
-        return redirect(redirects[name], code=307)
+        args = rest.split('/') if rest else []
+        return redirect(redirects[name].format(*args), code=307)
     else:
         return render_template('missing.html', name=name)
 
