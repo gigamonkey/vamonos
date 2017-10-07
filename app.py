@@ -8,7 +8,7 @@ import re
 
 # TODO:
 #
-# - Delete patterns and whole names.
+# - Delete individual patterns.
 # - Move to static frontend with API.
 # - External storage of db. (Real db)
 
@@ -25,7 +25,7 @@ def _run_on_start():
 
 @app.route("/")
 def home():
-    names = [ (n, sorted(d.items())) for (n, d) in sorted(redirects.items()) ]
+    names = [ (n, sorted(d.items())) for (n, d) in sorted(redirects.items()) if d ]
     return render_template('home.html', names=names)
 
 @app.route("/_/<name>", methods=['GET', 'POST'])
@@ -43,6 +43,13 @@ def manage(name):
 
     patterns = sorted(redirects[name].items())
     return render_template('name.html', name=name, patterns=patterns, error=error)
+
+@app.route("/_/<name>", methods=['DELETE'])
+def delete(name):
+    del redirects[name]
+    save_db(redirects)
+    return "Deleted"
+
 
 @app.route("/<name>/", defaults={'rest': None})
 @app.route("/<name>/<path:rest>")
