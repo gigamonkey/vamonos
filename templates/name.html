@@ -7,8 +7,8 @@
     {% if error %}Error: {{ error }}{% endif %}
     <h1>{{ name }}</h1>
     <ul>
-      {% for n in patterns %}
-      <li>args: {{ n }} &mdash; {{ patterns[n] }}</li>
+      {% for (n, p) in patterns %}
+      <li>args: {{ n }} &mdash; {{ p }}</li>
       {% endfor %}
       <li>
         <form method='POST' action='/_/{{ name }}'>

@@ -25,7 +25,8 @@ def manage(name):
         except ValueError as e:
             error = str(e)
 
-    return render_template('name.html', name=name, patterns=redirects[name], error=error)
+    patterns = sorted(redirects[name].items())
+    return render_template('name.html', name=name, patterns=patterns, error=error)
 
 @app.route("/<name>/", defaults={'rest': None})
 @app.route("/<name>/<path:rest>")
