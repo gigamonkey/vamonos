@@ -4,6 +4,7 @@
     <title>¡Vamanos! - {{ name }}</title>
   </head>
   <body>
+    {% if error %}Error: {{ error }}{% endif %}
     <h1>{{ name }}</h1>
     <ul>
       {% for n in patterns %}

@@ -2,6 +2,9 @@ from collections import defaultdict
 from flask import Flask, redirect, render_template, request
 import re
 
+# We use HTTP 307 in order to continue to get a chance to see people
+# using go links, mainly so the redirection can change.
+
 app = Flask(__name__)
 
 app.config['DEBUG'] = True
@@ -10,33 +13,29 @@ redirects = defaultdict(dict)
 redirects['goog'][0] = 'https://www.google.com/'
 redirects['goog'][1] = 'https://www.google.com/search?q={}'
 
-@app.route("/_/<name>", methods=['GET'])
-def show(name):
-    return render_template('name.html', name=name, patterns=redirects[name])
+@app.route("/_/<name>", methods=['GET', 'POST'])
+def manage(name):
+    error = None
+    if request.method == 'POST':
+        pattern = request.form['url']
+        try:
+            # FIXME: there's more well-formedness checking we could do
+            # on the pattern.
+            redirects[name][count_args(pattern)] = pattern
+        except ValueError as e:
+            error = str(e)
 
-@app.route("/_/<name>", methods=['POST'])
-def create(name):
-    pattern = request.form['url']
-    try:
-        redirects[name][count_args(pattern)] = pattern
-        return redirect('/_/' + name)
-    except ValueError as e:
-        return str(e)
+    return render_template('name.html', name=name, patterns=redirects[name], error=error)
 
 @app.route("/<name>/", defaults={'rest': None})
 @app.route("/<name>/<path:rest>")
 def redirection(name, rest):
-    name = depunctuate(name)
-    if name in redirects:
-        args = rest.split('/') if rest else []
+    name = ''.join(filter(str.isalnum, name))
+    args = rest.split('/') if rest else []
+    if len(args) in redirects[name]:
         return redirect(redirects[name][len(args)].format(*args), code=307)
     else:
         return redirect('/_/' + name)
-
-
-def depunctuate(name):
-    return ''.join(filter(str.isalnum, name))
-
 
 def count_args(pattern):
     numbered_pats = re.findall('{\d+}', pattern)
