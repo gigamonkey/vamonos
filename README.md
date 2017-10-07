@@ -1,0 +1,3 @@
+# Vamanos
+
+Simple link redirector.
