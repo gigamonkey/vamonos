@@ -7,9 +7,8 @@ import re
 
 # TODO:
 #
-# - Something at /
-# - Move to static frontend with API.
 # - External storage of db. (JSON)
+# - Move to static frontend with API.
 # - External storage of db. (Real db)
 
 app = Flask(__name__)
@@ -19,6 +18,11 @@ app.config['DEBUG'] = True
 redirects = defaultdict(dict)
 redirects['goog'][0] = 'https://www.google.com/'
 redirects['goog'][1] = 'https://www.google.com/search?q={}'
+
+@app.route("/")
+def home():
+    names = [ (n, sorted(d.items())) for (n, d) in sorted(redirects.items()) ]
+    return render_template('home.html', names=names)
 
 @app.route("/_/<name>", methods=['GET', 'POST'])
 def manage(name):
@@ -40,7 +44,8 @@ def manage(name):
 def redirection(name, rest):
     name = ''.join(filter(str.isalnum, name))
     args = rest.split('/') if rest else []
-    redirect(redirects[name][len(args)].format(*args) if len(args) in redirects[name] else '/_/' + name)
+    url  = redirects[name][len(args)].format(*args) if len(args) in redirects[name] else '/_/' + name
+    return redirect(url)
 
 def count_args(pattern):
     numbered_pats = re.findall('{\d+}', pattern)
