@@ -7,18 +7,14 @@ app.config['DEBUG'] = True
 redirects = {}
 redirects['goog'] = 'https://google.com'
 
-@app.route("/")
-def hello():
-    return "Hello World!"
-
 @app.route("/API/create/", methods=['POST'])
 def create():
-    redirects[request.form['shortname']] = request.form['url']
-    return redirect('/' + request.form['shortname'], code=302, Response=None)
+    redirects[request.form['name']] = request.form['url']
+    return redirect('/' + request.form['name'], code=302)
 
-@app.route("/<shortname>")
-def redirection(shortname):
-    if shortname in redirects:
-        return redirect(redirects[shortname], code=307, Response=None)
+@app.route("/<name>")
+def redirection(name):
+    if name in redirects:
+        return redirect(redirects[name], code=307)
     else:
-        return render_template('missing.html', shortname=shortname)
+        return render_template('missing.html', name=name)
