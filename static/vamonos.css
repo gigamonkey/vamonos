@@ -11,8 +11,10 @@ body {
     vertical-align: middle;
     padding: 2px;
     margin-left: 6px;
-    border: thin solid #88f;
-    background: #eee;
+}
+
+li {
+    padding-top: 6px;
 }
 
 .new-name {
