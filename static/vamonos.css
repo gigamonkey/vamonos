@@ -8,6 +8,7 @@ body {
 
 .delete {
     font-size: 10px;
+    vertical-align: middle;
     padding: 2px;
     margin-left: 6px;
     border: thin solid #88f;
