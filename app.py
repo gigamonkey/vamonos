@@ -54,13 +54,14 @@ def manage(name):
     error = None
     if request.method == 'POST':
         pattern = request.form['url']
-        try:
+        n = count_args(pattern)
+        if n is None:
             # FIXME: there's more well-formedness checking we could do
             # on the pattern.
-            db[name][count_args(pattern)] = pattern
-        except ValueError as e:
-            error = str(e)
-        save_db(db)
+            error = "Mixed arg types."
+        else:
+            db[name][n] = pattern
+            save_db(db)
 
     patterns = sorted(db[name].items())
     return render_template('name.html', name=name, patterns=patterns, error=error)
@@ -75,7 +76,7 @@ def delete(name):
 def delete_pattern(name, pattern):
     d = db[name]
     n = count_args(pattern)
-    if n in d and d[n] == pattern:
+    if n and n in d and d[n] == pattern:
         del d[n]
         save_db(db)
         return "Deleted pattern", 200
@@ -91,7 +92,7 @@ def count_args(pattern):
     auto_pats     = re.findall('{}', pattern)
 
     if numbered_pats and auto_pats:
-        raise ValueError("Can't mix explictly numbered and auto-numbered patterns.")
+        return None # Poor man's Maybe
     elif numbered_pats:
         return 1 + max(int(x.strip('{}')) for x in numbered_pats)
     else:
