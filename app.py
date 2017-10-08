@@ -8,8 +8,8 @@ import re
 
 # TODO:
 #
-# - Clean up JSON returned by API.
 # - Thread safe external storage of db.
+# - Use http://fontawesome.io/ icons in Web UI.
 
 app = Flask(__name__)
 
@@ -53,15 +53,17 @@ def redirection(name, rest):
 # API - Restful API for CRUDing links.
 #
 
-@app.route("/_/")
+@app.route("/_/", methods=['GET'])
 def all():
-    return json_response(new_json(db))
+    return json_response(jasonify(db))
 
 
 @app.route("/_/<name>", methods=['GET'])
 def get_name(name):
-    js, code = (db[name], 200) if name in db else ({}, 404)
-    return json_response(js, code)
+    if name in db:
+        return json_response(jasonify_item(name))
+    else:
+        return json_response({}, 404)
 
 
 @app.route("/_/<name>", methods=['DELETE'])
@@ -89,7 +91,7 @@ def put_pattern(name, pattern):
     if error:
         return json_response({"error": error}, 400)
     else:
-        return json_response(db[name])
+        return json_response(jasonify_item(name))
 
 
 @app.route("/_/<name>/<path:pattern>", methods=['DELETE'])
@@ -99,7 +101,7 @@ def delete_pattern(name, pattern):
     if n is not None and n in d and d[n] == pattern:
         del d[n]
         save_db(db)
-        return json_response(db[name])
+        return json_response(jasonify_item(name))
     else:
         return json_response({"error": "No such pattern"}, 404)
 
@@ -136,7 +138,11 @@ def save_db(db):
 
 def load_db():
     with open("db.json") as f:
-        raw = json.load(f)
+        return index_db(json.load(f))
+
+
+def index_db(raw):
+    "Convert the on-disk format to an efficient in-memory representation."
     db = defaultdict(dict)
     for (name, patterns) in raw.items():
         for (n, pattern) in patterns.items():
@@ -144,9 +150,12 @@ def load_db():
     return db
 
 
-def new_json(old):
-    return [new_json_item(name, patterns) for name, patterns in old.items()]
+def jasonify(db):
+    "Convert in-memory format of the whole db into the JSON we send in API responses."
+    return [ jasonify_item(name, patterns) for name, patterns in db.items() ]
 
 
-def new_json_item(name, patterns):
-    return {'name': name, 'patterns': [{'pattern': p, 'args': int(n)} for n, p in patterns.items()]}
+def jasonify_item(name, patterns=None):
+    "Convert in-memory format of one item into the JSON we send in API responses."
+    if patterns is None: patterns = db[name]
+    return {'name': name, 'patterns': [ {'pattern': p, 'args': n} for n, p in patterns.items()] }

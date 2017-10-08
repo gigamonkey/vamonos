@@ -8,7 +8,7 @@
   function maybeAddName(p) {
     if (p != '/') {
       name = p.substring(1, p.indexOf('/', 1))
-      $('body').append(nameSection(name, []).addClass('new-name'));
+      $('body').append(nameSection({'name': name, 'patterns': []}).addClass('new-name'));
       history.replaceState({}, '', '/');
     }
   }
@@ -16,19 +16,23 @@
   function addNamesFromDB (db) {
     $.each(_.sortBy(db, ['name']), function (i, item) {
       if (item.patterns.length > 0) {
-        var sorted = _.map(_.sortBy(item.patterns, ['args']), function (d) { return d.pattern; });
-        $('body').append(nameSection(item.name, sorted));
+        $('body').append(nameSection(item));
       }
     });
   }
 
-  function nameSection(name, patterns) {
+  function nameSection(item) {
+    var name     = item.name;
+    var patterns = _.map(_.sortBy(item.patterns, ['args']), function (d) { return d.pattern; });
+
     var div = $('<div>');
-    div.append($('<h1>').text(name).append(deleteButton(function () { deleteName(name, div); })));
-    var ul = div.append($('<ul>'));
+    var h1  = $('<h1>').text(name).append(deleteButton(function () { deleteName(name, div); }));
+    var ul  = $('<ul>');
+
     $.each(patterns, function (i, p) { pattern(div, ul, name, p); });
     ul.append($('<li>').append(makeForm(name, div)))
-    return div;
+
+    return div.append(h1).append(ul);
   }
 
   function pattern(div, ul, name, p) {
@@ -37,7 +41,7 @@
   }
 
   function deleteButton(fn) {
-    return $('<span>').addClass('delete').text('del').click(fn)
+    return $('<span>').addClass('delete').text('❌').click(fn)
   }
 
   function makeForm(name, div) {
@@ -46,12 +50,16 @@
     });
   }
 
+
+  // API functions
+
   function putPattern(name, div, pattern) {
     $.ajax({
       url: '/_/' + name + '/' + encodeURIComponent(pattern),
       type: 'PUT',
       success: function (x) {
-        div.replaceWith(nameSection(name, x));
+        console.log(x);
+        div.replaceWith(nameSection(x));
       },
       error: function (x) {
         alert(x);
@@ -64,7 +72,7 @@
       url: '/_/' + name + '/' + encodeURIComponent(pattern),
       type: 'DELETE',
       success: function (x) {
-        div.replaceWith(nameSection(name, x));
+        div.replaceWith(nameSection(x));
       },
       error: function (x) {
         alert(x);
