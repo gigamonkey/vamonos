@@ -4,6 +4,7 @@
     $.ajax('/_/', {
       success: function (x) {
         var db = JSON.parse(x)
+        console.log(db);
         var keys = _.keys(db)
         keys.sort()
         $.each(keys, function (i, k) {
@@ -18,11 +19,19 @@
   }
 
   function nameSection(name, patterns) {
-    var d = $('<div>').append($('<h1>').text(name));
-    var ul = d.append($('<ul>'));
-    $.each(patterns, function (i, p) { ul.append($('<li>').text(p)); });
-    ul.append($('<li>').append(makeForm(name, d)))
-    return d;
+    var div = $('<div>').append($('<h1>').text(name));
+    var ul = div.append($('<ul>'));
+    $.each(patterns, function (i, p) { pattern(div, ul, name, p); });
+    ul.append($('<li>').append(makeForm(name, div)))
+    return div;
+  }
+
+  function pattern(div, ul, name, p) {
+    var del = $('<span>')
+      .addClass('delete')
+      .text('del')
+      .click(function () { deletePattern(name, div, p); });
+    ul.append($('<li>').text(p).append(del));
   }
 
   function makeForm(name, div) {
@@ -36,6 +45,20 @@
       url: '/_/' + name + '/' + encodeURIComponent(pattern),
       type: 'PUT',
       success: function (x) {
+        div.replaceWith(nameSection(name, JSON.parse(x)));
+      },
+      error: function (x) {
+        alert(x);
+      }
+    });
+  }
+
+  function deletePattern(name, div, pattern) {
+    $.ajax({
+      url: '/_/' + name + '/' + encodeURIComponent(pattern),
+      type: 'DELETE',
+      success: function (x) {
+        console.log(x);
         div.replaceWith(nameSection(name, JSON.parse(x)));
       },
       error: function (x) {

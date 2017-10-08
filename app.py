@@ -8,7 +8,9 @@ import re
 
 # TODO:
 #
-# - Add delete pattern and name to UI.
+# - UI for creating a whole new name.
+# - UI for deleting whole names.
+# - Clean up JSON returned by API.
 # - Make sure Content-type is being set correctly.
 # - External storage of db. (Real db)
 
@@ -52,22 +54,12 @@ def redirection(name, rest):
 def all():
     return json.dumps(db)
 
-@app.route("/_/<name>", methods=['GET', 'POST'])
-def manage(name):
-    error = None
-    if request.method == 'POST':
-        pattern = request.form['url']
-        n = count_args(pattern)
-        if n is None:
-            # FIXME: there's more well-formedness checking we could do
-            # on the pattern.
-            error = "Mixed arg types."
-        else:
-            db[name][n] = pattern
-            save_db(db)
-
-    patterns = sorted(db[name].items())
-    return render_template('name.html', name=name, patterns=patterns, error=error)
+@app.route("/_/<name>", methods=['GET'])
+def get_name(name):
+    if name in db:
+        return json.dumps(db[name])
+    else:
+        return json.dumps({}), 404
 
 @app.route("/_/<name>/<path:pattern>", methods=['PUT'])
 def put_pattern(name, pattern):
@@ -86,6 +78,16 @@ def put_pattern(name, pattern):
     else:
         return json.dumps(db[name])
 
+@app.route("/_/<name>/<path:pattern>", methods=['DELETE'])
+def delete_pattern(name, pattern):
+    d = db[name]
+    n = count_args(pattern)
+    if n is not None and n in d and d[n] == pattern:
+        del d[n]
+        save_db(db)
+        return json.dumps(db[name])
+    else:
+        return json.dumps({ "error": "No such pattern" }), 404
 
 @app.route("/_/<name>", methods=['DELETE'])
 def delete(name):
@@ -93,16 +95,6 @@ def delete(name):
     save_db(db)
     return "Deleted"
 
-@app.route("/_/<name>/<path:pattern>", methods=['DELETE'])
-def delete_pattern(name, pattern):
-    d = db[name]
-    n = count_args(pattern)
-    if n and n in d and d[n] == pattern:
-        del d[n]
-        save_db(db)
-        return "Deleted pattern", 200
-    else:
-        return "Can't find pattern", 404
 
 #
 # Utilities

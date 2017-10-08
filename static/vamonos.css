@@ -4,3 +4,12 @@ body {
     margin-left: auto;
     margin-right: auto;
 }
+
+
+.delete {
+    font-size: 75%;
+    padding: 2px;
+    margin-left: 6px;
+    border: thin solid #88f;
+    background: #eee;
+}
