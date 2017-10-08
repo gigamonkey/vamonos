@@ -1,5 +1,5 @@
 from collections import defaultdict
-from flask import Flask, redirect, render_template, request, send_file
+from flask import Flask, redirect, request, send_file
 import json
 import re
 
