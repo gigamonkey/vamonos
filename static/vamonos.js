@@ -3,11 +3,14 @@
   function go() {
     $.ajax('/_/', {
       success: function (x) {
-        $.each(JSON.parse(x), function (k, v) {
-          patterns = []
-          $.each(v, function (n, p) { patterns.push(p); });
+        var db = JSON.parse(x)
+        var keys = _.keys(db)
+        keys.sort()
+        $.each(keys, function (i, k) {
+          var patterns = _.map(db[k], function (p, n) { return { args: parseInt(n), pattern: p }; });
           if (patterns.length > 0) {
-            $('body').append(nameSection(k, patterns));
+            sorted = _.map(_.sortBy(patterns, ['args']), function (d) { return d.pattern; });
+            $('body').append(nameSection(k, sorted));
           }
         });
       }
@@ -18,7 +21,27 @@
     var d = $('<div>').append($('<h1>').text(name));
     var ul = d.append($('<ul>'));
     $.each(patterns, function (i, p) { ul.append($('<li>').text(p)); });
+    ul.append($('<li>').append(makeForm(name, d)))
     return d;
+  }
+
+  function makeForm(name, div) {
+    return $('<input>').attr('size', 50).change(function (x) {
+      submitPattern(name, div, $(x.target).val());
+    });
+  }
+
+  function submitPattern(name, div, pattern) {
+    $.ajax({
+      url: '/_/' + name + '/' + encodeURIComponent(pattern),
+      type: 'PUT',
+      success: function (x) {
+        div.replaceWith(nameSection(name, JSON.parse(x)));
+      },
+      error: function (x) {
+        alert(x);
+      }
+    });
   }
 
   function removeNameButton (name) {

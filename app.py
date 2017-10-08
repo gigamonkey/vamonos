@@ -8,7 +8,8 @@ import re
 
 # TODO:
 #
-# - Move to static frontend with API.
+# - Add delete pattern and name to UI.
+# - Make sure Content-type is being set correctly.
 # - External storage of db. (Real db)
 
 app = Flask(__name__)
@@ -67,6 +68,24 @@ def manage(name):
 
     patterns = sorted(db[name].items())
     return render_template('name.html', name=name, patterns=patterns, error=error)
+
+@app.route("/_/<name>/<path:pattern>", methods=['PUT'])
+def put_pattern(name, pattern):
+    error = None
+    n = count_args(pattern)
+    if n is None:
+        # FIXME: there's more well-formedness checking we could do
+        # on the pattern.
+        error = "Mixed arg types."
+    else:
+        db[name][n] = pattern
+        save_db(db)
+
+    if error:
+        return json.dumps({ "error": error }), 400
+    else:
+        return json.dumps(db[name])
+
 
 @app.route("/_/<name>", methods=['DELETE'])
 def delete(name):
