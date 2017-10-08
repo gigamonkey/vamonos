@@ -15,17 +15,39 @@ app = Flask(__name__)
 
 app.config['DEBUG'] = True
 
-redirects = None
+db = None
 
 @app.before_first_request
 def _run_on_start():
-    global redirects
-    redirects = load_db()
+    global db
+    db = load_db()
+
+#
+# Web UI -- single page app that lets a user manage existing names,
+# create new names, see stats about what names are used, etc.
+#
 
 @app.route("/")
 def home():
-    names = [ (n, sorted(d.items())) for (n, d) in sorted(redirects.items()) if d ]
+    names = [ (n, sorted(d.items())) for (n, d) in sorted(db.items()) if d ]
     return render_template('home.html', names=names)
+
+
+#
+# The actual redirector.
+#
+
+@app.route("/<name>/", defaults={'rest': None})
+@app.route("/<name>/<path:rest>")
+def redirection(name, rest):
+    name = ''.join(filter(str.isalnum, name))
+    args = rest.split('/') if rest else []
+    url  = db[name][len(args)].format(*args) if len(args) in db[name] else '/_/' + name
+    return redirect(url)
+
+#
+# API - Restful API for CRUDing links.
+#
 
 @app.route("/_/<name>", methods=['GET', 'POST'])
 def manage(name):
@@ -35,39 +57,34 @@ def manage(name):
         try:
             # FIXME: there's more well-formedness checking we could do
             # on the pattern.
-            redirects[name][count_args(pattern)] = pattern
+            db[name][count_args(pattern)] = pattern
         except ValueError as e:
             error = str(e)
-        save_db(redirects)
+        save_db(db)
 
-    patterns = sorted(redirects[name].items())
+    patterns = sorted(db[name].items())
     return render_template('name.html', name=name, patterns=patterns, error=error)
 
 @app.route("/_/<name>", methods=['DELETE'])
 def delete(name):
-    del redirects[name]
-    save_db(redirects)
+    del db[name]
+    save_db(db)
     return "Deleted"
 
 @app.route("/_/<name>/<path:pattern>", methods=['DELETE'])
 def delete_pattern(name, pattern):
-    d = redirects[name]
+    d = db[name]
     n = count_args(pattern)
     if n in d and d[n] == pattern:
         del d[n]
-        save_db(redirects)
+        save_db(db)
         return "Deleted pattern", 200
     else:
         return "Can't find pattern", 404
 
-
-@app.route("/<name>/", defaults={'rest': None})
-@app.route("/<name>/<path:rest>")
-def redirection(name, rest):
-    name = ''.join(filter(str.isalnum, name))
-    args = rest.split('/') if rest else []
-    url  = redirects[name][len(args)].format(*args) if len(args) in redirects[name] else '/_/' + name
-    return redirect(url)
+#
+# Utilities
+#
 
 def count_args(pattern):
     numbered_pats = re.findall('{\d+}', pattern)
@@ -79,7 +96,6 @@ def count_args(pattern):
         return 1 + max(int(x.strip('{}')) for x in numbered_pats)
     else:
         return len(auto_pats)
-
 
 #
 # DB
