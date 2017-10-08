@@ -54,7 +54,7 @@ def redirection(name, rest):
 #
 
 @app.route("/_/", methods=['GET'])
-def all():
+def get_all():
     return json_response(jasonify(db))
 
 
@@ -106,7 +106,6 @@ def delete_pattern(name, pattern):
         return json_response({"error": "No such pattern"}, 404)
 
 
-
 #
 # Utilities
 #
@@ -151,11 +150,14 @@ def index_db(raw):
 
 
 def jasonify(db):
-    "Convert in-memory format of the whole db into the JSON we send in API responses."
-    return [ jasonify_item(name, patterns) for name, patterns in db.items() ]
+    "Convert whole db into the JSON we send in API responses."
+    return [jasonify_item(name, patterns) for name, patterns in db.items()]
 
 
 def jasonify_item(name, patterns=None):
-    "Convert in-memory format of one item into the JSON we send in API responses."
-    if patterns is None: patterns = db[name]
-    return {'name': name, 'patterns': [ {'pattern': p, 'args': n} for n, p in patterns.items()] }
+    "Convert one item into the JSON we send in API responses."
+    ps = patterns or db[name]
+    return {
+        'name': name,
+        'patterns': [{'pattern': p, 'args': n} for n, p in ps.items()]
+    }
