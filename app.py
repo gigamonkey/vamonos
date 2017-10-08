@@ -49,6 +49,10 @@ def redirection(name, rest):
 # API - Restful API for CRUDing links.
 #
 
+@app.route("/_/")
+def all():
+    return json.dumps(db)
+
 @app.route("/_/<name>", methods=['GET', 'POST'])
 def manage(name):
     error = None
