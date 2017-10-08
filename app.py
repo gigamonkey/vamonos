@@ -8,11 +8,10 @@ import re
 
 # TODO:
 #
-# - UI for creating a whole new name.
 # - UI for deleting whole names.
 # - Clean up JSON returned by API.
 # - Make sure Content-type is being set correctly.
-# - External storage of db. (Real db)
+# - Thread safe external storage of db.
 
 app = Flask(__name__)
 
@@ -43,8 +42,10 @@ def home():
 def redirection(name, rest):
     name = ''.join(filter(str.isalnum, name))
     args = rest.split('/') if rest else []
-    url  = db[name][len(args)].format(*args) if len(args) in db[name] else '/_/' + name
-    return redirect(url)
+    if len(args) in db[name]:
+        return redirect(db[name][len(args)].format(*args))
+    else:
+        return send_file('static/index.html')
 
 #
 # API - Restful API for CRUDing links.

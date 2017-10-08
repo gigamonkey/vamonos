@@ -1,6 +1,11 @@
 (function () {
 
   function go() {
+    var p = window.location.pathname;
+    if (p != '/') {
+      name = p.substring(1, p.indexOf('/', 1))
+      $('body').append(nameSection(name, []));
+    }
     $.ajax('/_/', {
       success: function (x) {
         var db = JSON.parse(x)
