@@ -55,7 +55,7 @@ def redirection(name, rest):
 
 @app.route("/_/")
 def all():
-    return json_response(db)
+    return json_response(new_json(db))
 
 
 @app.route("/_/<name>", methods=['GET'])
@@ -124,6 +124,7 @@ def count_args(pattern):
 def json_response(js, code=200):
     return Response(json.dumps(js), status=code, mimetype='application/json')
 
+
 #
 # DB
 #
@@ -140,4 +141,14 @@ def load_db():
     for (name, patterns) in raw.items():
         for (n, pattern) in patterns.items():
             db[name][int(n)] = pattern
+    return db
+
+
+def new_json(old):
+    db = []
+    for (name, patterns) in old.items():
+        item = {'name': name, 'patterns': []}
+        for (n, pattern) in patterns.items():
+            item['patterns'].append({'pattern': pattern, 'args': int(n)})
+        db.append(item)
     return db

@@ -13,15 +13,11 @@
     }
   }
 
-  function addNamesFromDB (data) {
-    var db = data
-    var keys = _.keys(db)
-    keys.sort()
-    $.each(keys, function (i, k) {
-      var patterns = _.map(db[k], function (p, n) { return { args: parseInt(n), pattern: p }; });
-      if (patterns.length > 0) {
-        sorted = _.map(_.sortBy(patterns, ['args']), function (d) { return d.pattern; });
-        $('body').append(nameSection(k, sorted));
+  function addNamesFromDB (db) {
+    $.each(_.sortBy(db, ['name']), function (i, item) {
+      if (item.patterns.length > 0) {
+        var sorted = _.map(_.sortBy(item.patterns, ['args']), function (d) { return d.pattern; });
+        $('body').append(nameSection(item.name, sorted));
       }
     });
   }
