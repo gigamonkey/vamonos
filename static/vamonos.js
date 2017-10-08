@@ -14,7 +14,6 @@
 
   function addNamesFromDB (data) {
         var db = JSON.parse(data)
-        console.log(db);
         var keys = _.keys(db)
         keys.sort()
         $.each(keys, function (i, k) {
@@ -27,7 +26,8 @@
       }
 
   function nameSection(name, patterns) {
-    var div = $('<div>').append($('<h1>').text(name));
+    var div = $('<div>');
+    div.append($('<h1>').text(name).append(deleteButton(function () { deleteName(name, div); })));
     var ul = div.append($('<ul>'));
     $.each(patterns, function (i, p) { pattern(div, ul, name, p); });
     ul.append($('<li>').append(makeForm(name, div)))
@@ -35,11 +35,12 @@
   }
 
   function pattern(div, ul, name, p) {
-    var del = $('<span>')
-      .addClass('delete')
-      .text('del')
-      .click(function () { deletePattern(name, div, p); });
+    var del = deleteButton(function () { deletePattern(name, div, p); })
     ul.append($('<li>').text(p).append(del));
+  }
+
+  function deleteButton(fn) {
+    return $('<span>').addClass('delete').text('del').click(fn)
   }
 
   function makeForm(name, div) {
@@ -66,12 +67,20 @@
       url: '/_/' + name + '/' + encodeURIComponent(pattern),
       type: 'DELETE',
       success: function (x) {
-        console.log(x);
         div.replaceWith(nameSection(name, JSON.parse(x)));
       },
       error: function (x) {
         alert(x);
       }
+    });
+  }
+
+  function deleteName(name, div) {
+    $.ajax({
+      url: '/_/' + name,
+      type: 'DELETE',
+      success: function (x) { div.remove() },
+      error: function (x) { alert(x); }
     });
   }
 

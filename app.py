@@ -8,7 +8,6 @@ import re
 
 # TODO:
 #
-# - UI for deleting whole names.
 # - Clean up JSON returned by API.
 # - Make sure Content-type is being set correctly.
 # - Thread safe external storage of db.
@@ -91,10 +90,13 @@ def delete_pattern(name, pattern):
         return json.dumps({ "error": "No such pattern" }), 404
 
 @app.route("/_/<name>", methods=['DELETE'])
-def delete(name):
-    del db[name]
-    save_db(db)
-    return "Deleted"
+def delete_name(name):
+    if name in db:
+        del db[name]
+        save_db(db)
+        return json.dumps({})
+    else:
+        return json.dumps({ "error": "No such name" }), 404
 
 
 #
