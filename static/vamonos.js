@@ -8,7 +8,7 @@
   function maybeAddName(p) {
     if (p != '/') {
       name = p.substring(1, p.indexOf('/', 1))
-      $('body').append(nameSection(name, []));
+      $('body').append(nameSection(name, []).addClass('new-name'));
       history.replaceState({}, '', '/');
     }
   }
