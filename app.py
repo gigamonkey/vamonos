@@ -24,20 +24,20 @@ def _run_on_start():
     global db
     db = load_db()
 
+
 #
 # Web UI -- single page app that lets a user manage existing names,
 # create new names, see stats about what names are used, etc.
 #
 
-
 @app.route("/")
 def home():
     return send_file('static/index.html')
 
+
 #
 # The actual redirector.
 #
-
 
 @app.route("/<name>/", defaults={'rest': None})
 @app.route("/<name>/<path:rest>")
@@ -49,10 +49,10 @@ def redirection(name, rest):
     else:
         return send_file('static/index.html')
 
+
 #
 # API - Restful API for CRUDing links.
 #
-
 
 @app.route("/_/")
 def all():
@@ -122,10 +122,10 @@ def count_args(pattern):
     else:
         return len(auto_pats)
 
+
 #
 # DB
 #
-
 
 def save_db(db):
     with open("db.json", "w") as f:
