@@ -145,10 +145,8 @@ def load_db():
 
 
 def new_json(old):
-    db = []
-    for (name, patterns) in old.items():
-        item = {'name': name, 'patterns': []}
-        for (n, pattern) in patterns.items():
-            item['patterns'].append({'pattern': pattern, 'args': int(n)})
-        db.append(item)
-    return db
+    return [new_json_item(name, patterns) for name, patterns in old.items()]
+
+
+def new_json_item(name, patterns):
+    return {'name': name, 'patterns': [{'pattern': p, 'args': int(n)} for n, p in patterns.items()]}
