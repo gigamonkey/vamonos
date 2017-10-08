@@ -41,11 +41,11 @@
 
   function makeForm(name, div) {
     return $('<input>').attr('size', 50).change(function (x) {
-      submitPattern(name, div, $(x.target).val());
+      putPattern(name, div, $(x.target).val());
     });
   }
 
-  function submitPattern(name, div, pattern) {
+  function putPattern(name, div, pattern) {
     $.ajax({
       url: '/_/' + name + '/' + encodeURIComponent(pattern),
       type: 'PUT',
@@ -70,16 +70,6 @@
         alert(x);
       }
     });
-  }
-
-  function removeNameButton (name) {
-    return $('<span>').addClass('remove')
-      .text('remove')
-      .click(function () { deleteName(name); });
-  }
-
-  function deleteName(name) {
-    console.log('remove ' + name);
   }
 
   $(document).ready(go);
