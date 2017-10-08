@@ -1,14 +1,19 @@
 (function () {
 
   function go() {
-    var p = window.location.pathname;
+    maybeAddName(window.location.pathname);
+    $.ajax('/_/', { success: addNamesFromDB });
+  }
+
+  function maybeAddName(p) {
     if (p != '/') {
       name = p.substring(1, p.indexOf('/', 1))
       $('body').append(nameSection(name, []));
     }
-    $.ajax('/_/', {
-      success: function (x) {
-        var db = JSON.parse(x)
+  }
+
+  function addNamesFromDB (data) {
+        var db = JSON.parse(data)
         console.log(db);
         var keys = _.keys(db)
         keys.sort()
@@ -20,8 +25,6 @@
           }
         });
       }
-    });
-  }
 
   function nameSection(name, patterns) {
     var div = $('<div>').append($('<h1>').text(name));
