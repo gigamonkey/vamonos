@@ -14,17 +14,17 @@
   }
 
   function addNamesFromDB (data) {
-        var db = JSON.parse(data)
-        var keys = _.keys(db)
-        keys.sort()
-        $.each(keys, function (i, k) {
-          var patterns = _.map(db[k], function (p, n) { return { args: parseInt(n), pattern: p }; });
-          if (patterns.length > 0) {
-            sorted = _.map(_.sortBy(patterns, ['args']), function (d) { return d.pattern; });
-            $('body').append(nameSection(k, sorted));
-          }
-        });
+    var db = data
+    var keys = _.keys(db)
+    keys.sort()
+    $.each(keys, function (i, k) {
+      var patterns = _.map(db[k], function (p, n) { return { args: parseInt(n), pattern: p }; });
+      if (patterns.length > 0) {
+        sorted = _.map(_.sortBy(patterns, ['args']), function (d) { return d.pattern; });
+        $('body').append(nameSection(k, sorted));
       }
+    });
+  }
 
   function nameSection(name, patterns) {
     var div = $('<div>');
@@ -55,7 +55,7 @@
       url: '/_/' + name + '/' + encodeURIComponent(pattern),
       type: 'PUT',
       success: function (x) {
-        div.replaceWith(nameSection(name, JSON.parse(x)));
+        div.replaceWith(nameSection(name, x));
       },
       error: function (x) {
         alert(x);
@@ -68,7 +68,7 @@
       url: '/_/' + name + '/' + encodeURIComponent(pattern),
       type: 'DELETE',
       success: function (x) {
-        div.replaceWith(nameSection(name, JSON.parse(x)));
+        div.replaceWith(nameSection(name, x));
       },
       error: function (x) {
         alert(x);

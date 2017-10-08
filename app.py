@@ -1,5 +1,5 @@
 from collections import defaultdict
-from flask import Flask, redirect, request, send_file
+from flask import Flask, Response, redirect, request, send_file
 import json
 import re
 
@@ -9,7 +9,6 @@ import re
 # TODO:
 #
 # - Clean up JSON returned by API.
-# - Make sure Content-type is being set correctly.
 # - Thread safe external storage of db.
 
 app = Flask(__name__)
@@ -56,15 +55,23 @@ def redirection(name, rest):
 
 @app.route("/_/")
 def all():
-    return json.dumps(db)
+    return json_response(db)
 
 
 @app.route("/_/<name>", methods=['GET'])
 def get_name(name):
+    js, code = (db[name], 200) if name in db else ({}, 404)
+    return json_response(js, code)
+
+
+@app.route("/_/<name>", methods=['DELETE'])
+def delete_name(name):
     if name in db:
-        return json.dumps(db[name])
+        del db[name]
+        save_db(db)
+        return json_response({})
     else:
-        return json.dumps({}), 404
+        return json_response({"error": "No such name"}, 404)
 
 
 @app.route("/_/<name>/<path:pattern>", methods=['PUT'])
@@ -80,9 +87,9 @@ def put_pattern(name, pattern):
         save_db(db)
 
     if error:
-        return json.dumps({"error": error}), 400
+        return json_response({"error": error}, 400)
     else:
-        return json.dumps(db[name])
+        return json_response(db[name])
 
 
 @app.route("/_/<name>/<path:pattern>", methods=['DELETE'])
@@ -92,19 +99,10 @@ def delete_pattern(name, pattern):
     if n is not None and n in d and d[n] == pattern:
         del d[n]
         save_db(db)
-        return json.dumps(db[name])
+        return json_response(db[name])
     else:
-        return json.dumps({"error": "No such pattern"}), 404
+        return json_response({"error": "No such pattern"}, 404)
 
-
-@app.route("/_/<name>", methods=['DELETE'])
-def delete_name(name):
-    if name in db:
-        del db[name]
-        save_db(db)
-        return json.dumps({})
-    else:
-        return json.dumps({"error": "No such name"}), 404
 
 
 #
@@ -122,6 +120,9 @@ def count_args(pattern):
     else:
         return len(auto_pats)
 
+
+def json_response(js, code=200):
+    return Response(json.dumps(js), status=code, mimetype='application/json')
 
 #
 # DB
