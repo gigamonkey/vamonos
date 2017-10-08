@@ -1,5 +1,5 @@
 from collections import defaultdict
-from flask import Flask, redirect, render_template, request
+from flask import Flask, redirect, render_template, request, send_file
 import json
 import re
 
@@ -29,9 +29,7 @@ def _run_on_start():
 
 @app.route("/")
 def home():
-    names = [ (n, sorted(d.items())) for (n, d) in sorted(db.items()) if d ]
-    return render_template('home.html', names=names)
-
+    return send_file('static/index.html')
 
 #
 # The actual redirector.
