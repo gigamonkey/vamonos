@@ -18,6 +18,7 @@ app.config['DEBUG'] = True
 
 db = None
 
+
 @app.before_first_request
 def _run_on_start():
     global db
@@ -28,6 +29,7 @@ def _run_on_start():
 # create new names, see stats about what names are used, etc.
 #
 
+
 @app.route("/")
 def home():
     return send_file('static/index.html')
@@ -35,6 +37,7 @@ def home():
 #
 # The actual redirector.
 #
+
 
 @app.route("/<name>/", defaults={'rest': None})
 @app.route("/<name>/<path:rest>")
@@ -50,9 +53,11 @@ def redirection(name, rest):
 # API - Restful API for CRUDing links.
 #
 
+
 @app.route("/_/")
 def all():
     return json.dumps(db)
+
 
 @app.route("/_/<name>", methods=['GET'])
 def get_name(name):
@@ -60,6 +65,7 @@ def get_name(name):
         return json.dumps(db[name])
     else:
         return json.dumps({}), 404
+
 
 @app.route("/_/<name>/<path:pattern>", methods=['PUT'])
 def put_pattern(name, pattern):
@@ -74,9 +80,10 @@ def put_pattern(name, pattern):
         save_db(db)
 
     if error:
-        return json.dumps({ "error": error }), 400
+        return json.dumps({"error": error}), 400
     else:
         return json.dumps(db[name])
+
 
 @app.route("/_/<name>/<path:pattern>", methods=['DELETE'])
 def delete_pattern(name, pattern):
@@ -87,7 +94,8 @@ def delete_pattern(name, pattern):
         save_db(db)
         return json.dumps(db[name])
     else:
-        return json.dumps({ "error": "No such pattern" }), 404
+        return json.dumps({"error": "No such pattern"}), 404
+
 
 @app.route("/_/<name>", methods=['DELETE'])
 def delete_name(name):
@@ -96,7 +104,7 @@ def delete_name(name):
         save_db(db)
         return json.dumps({})
     else:
-        return json.dumps({ "error": "No such name" }), 404
+        return json.dumps({"error": "No such name"}), 404
 
 
 #
@@ -105,10 +113,10 @@ def delete_name(name):
 
 def count_args(pattern):
     numbered_pats = re.findall('{\d+}', pattern)
-    auto_pats     = re.findall('{}', pattern)
+    auto_pats = re.findall('{}', pattern)
 
     if numbered_pats and auto_pats:
-        return None # Poor man's Maybe
+        return None  # Poor man's Maybe
     elif numbered_pats:
         return 1 + max(int(x.strip('{}')) for x in numbered_pats)
     else:
@@ -118,11 +126,15 @@ def count_args(pattern):
 # DB
 #
 
+
 def save_db(db):
-    with open("db.json", "w") as f: json.dump(db, f)
+    with open("db.json", "w") as f:
+        json.dump(db, f)
+
 
 def load_db():
-    with open("db.json") as f: raw = json.load(f)
+    with open("db.json") as f:
+        raw = json.load(f)
     db = defaultdict(dict)
     for (name, patterns) in raw.items():
         for (n, pattern) in patterns.items():
