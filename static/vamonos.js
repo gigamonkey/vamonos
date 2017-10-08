@@ -9,6 +9,7 @@
     if (p != '/') {
       name = p.substring(1, p.indexOf('/', 1))
       $('body').append(nameSection(name, []));
+      history.replaceState({}, '', '/');
     }
   }
 
