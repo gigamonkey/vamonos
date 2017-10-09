@@ -8,7 +8,6 @@ import re
 
 # TODO:
 #
-# - Thread safe external storage of db.
 # - Change REST API so patterns are created via POST
 # - Use http://fontawesome.io/ icons in Web UI.
 
