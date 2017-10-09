@@ -65,7 +65,6 @@ class LoggedDB:
         "Replay any new log entries against our in-memory cache."
         new_lwm = self.low_water_mark
         for (entry, lsn) in self.log.read(self.low_water_mark):
-            print('** REPLAYING {}'.format(entry))
             self._replay(entry)
             new_lwm = lsn
 
@@ -77,7 +76,6 @@ class LoggedDB:
         "Load cached data from disk so we don't have to replay the whole log."
         with open(self.file) as f:
             flock(f, LOCK_EX)
-            print("** LOADING CACHE FROM DISK **")
             self.cache = defaultdict(dict)
             data = json.load(f)
             self.low_water_mark = data['low_water_mark']
@@ -97,7 +95,6 @@ class LoggedDB:
         # records than they might have otherwise.
         with open(self.file, 'w') as f:
             flock(f, LOCK_EX)
-            print("** SAVING CACHE TO DISK **")
             json.dump({
                 'low_water_mark': self.low_water_mark,
                 'cache': self.cache
