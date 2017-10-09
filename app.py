@@ -76,6 +76,19 @@ class DB:
         self.save()
 
 
+    def jsonify(self):
+        "Convert whole db into the JSON we send in API responses."
+        return [self.jsonify_item(name, patterns) for name, patterns in self.cache.items()]
+
+
+    def jsonify_item(self, name, patterns=None):
+        "Convert one item into the JSON we send in API responses."
+        ps = patterns or self.get_patterns(name)
+        return {
+            'name': name,
+            'patterns': [{'pattern': p, 'args': n} for n, p in ps.items()]
+        }
+
 
 @app.before_first_request
 def _run_on_start():
@@ -114,13 +127,13 @@ def redirection(name, rest):
 
 @app.route("/_/", methods=['GET'])
 def get_all():
-    return json_response(jsonify(db.cache))
+    return json_response(db.jsonify())
 
 
 @app.route("/_/<name>", methods=['GET'])
 def get_name(name):
     if db.has_name(name):
-        return json_response(jsonify_item(name))
+        return json_response(db.jsonify_item(name))
     else:
         return json_response({}, 404)
 
@@ -148,7 +161,7 @@ def put_pattern(name, pattern):
     if error:
         return json_response({"error": error}, 400)
     else:
-        return json_response(jsonify_item(name))
+        return json_response(db.jsonify_item(name))
 
 
 @app.route("/_/<name>/<path:pattern>", methods=['DELETE'])
@@ -156,7 +169,7 @@ def delete_pattern(name, pattern):
     n = count_args(pattern)
     if n is not None and db.has_pattern(name, n) and db.get_pattern(name, n) == pattern:
         db.delete_pattern(name, n)
-        return json_response(jsonify_item(name))
+        return json_response(db.jsonify_item(name))
     else:
         return json_response({"error": "No such pattern"}, 404)
 
@@ -179,17 +192,3 @@ def count_args(pattern):
 
 def json_response(js, code=200):
     return Response(json.dumps(js), status=code, mimetype='application/json')
-
-
-def jsonify(cache):
-    "Convert whole db into the JSON we send in API responses."
-    return [jsonify_item(name, patterns) for name, patterns in cache.items()]
-
-
-def jsonify_item(name, patterns=None):
-    "Convert one item into the JSON we send in API responses."
-    ps = patterns or db.get_patterns(name)
-    return {
-        'name': name,
-        'patterns': [{'pattern': p, 'args': n} for n, p in ps.items()]
-    }
