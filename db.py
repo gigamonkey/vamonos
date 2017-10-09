@@ -78,6 +78,16 @@ class SimpleDB (DB):
 
 class LoggedDB (DB):
 
+    """\
+A database implementation that sits on top of a write-ahead log and an
+in-memory cache. Mutations to the database are written to the log and
+all reads first replay any new log entries to make sure the cache is
+up to date with any changes made by this or other processes. We also
+write out the cache to disk to avoid having to replay the whole log at
+startup.
+    """
+
+
     def __init__(self, name):
         self.file = name + '.data'
         self.log = Log(name + '.log')
@@ -179,7 +189,7 @@ class LoggedDB (DB):
 
 class Log:
 
-    "Simple write ahead log. Records each record as a line."
+    "Simple write-ahead log. Records each record as a line."
 
     def __init__(self, file):
         self.file = file
