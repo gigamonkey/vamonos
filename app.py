@@ -1,4 +1,3 @@
-from collections import defaultdict
 from db import DB
 from flask import Flask, Response, redirect, request, send_file
 import json
@@ -88,10 +87,9 @@ def put_pattern(name, pattern):
         return json_response(db.jsonify_item(name))
 
 
-@app.route("/_/<name>/<path:pattern>", methods=['DELETE'])
-def delete_pattern(name, pattern):
-    n = count_args(pattern)
-    if n is not None and db.get_pattern(name, n) == pattern:
+@app.route("/_/<name>/<int:n>", methods=['DELETE'])
+def delete_pattern(name, n):
+    if db.get_pattern(name, n):
         db.delete_pattern(name, n)
         return json_response(db.jsonify_item(name))
     else:

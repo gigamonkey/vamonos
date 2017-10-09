@@ -1,3 +1,6 @@
+from collections import defaultdict
+import json
+
 class DB:
 
     def __init__(self, file):
@@ -8,7 +11,7 @@ class DB:
                 for (n, pattern) in patterns.items():
                     self.cache[name][int(n)] = pattern
 
-    def save(self):
+    def _save(self):
         with open(self.file, "w") as f:
             json.dump(self.cache, f)
 
@@ -17,7 +20,7 @@ class DB:
 
     def delete_name(self, name):
         del self.cache[name]
-        self.save()
+        self._save()
 
     def get_patterns(self, name):
         return self.cache[name]
@@ -30,11 +33,11 @@ class DB:
 
     def delete_pattern(self, name, n):
         del self.cache[name][n]
-        self.save()
+        self._save()
 
     def set_pattern(self, name, n, pattern):
         self.cache[name][n] = pattern
-        self.save()
+        self._save()
 
     def jsonify(self):
         "Convert whole db into the JSON we send in API responses."

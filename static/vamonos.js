@@ -23,7 +23,7 @@
 
   function nameSection(item) {
     var name     = item.name;
-    var patterns = _.map(_.sortBy(item.patterns, ['args']), function (d) { return d.pattern; });
+    var patterns = _.sortBy(item.patterns, ['args'])
 
     var div = $('<div>');
     var h1  = $('<h1>').text(name).append(deleteButton(function () { deleteName(name, div); }));
@@ -36,8 +36,8 @@
   }
 
   function pattern(div, ul, name, p) {
-    var del = deleteButton(function () { deletePattern(name, div, p); })
-    ul.append($('<li>').text(p).append(del));
+    var del = deleteButton(function () { deletePattern(name, div, p.args); })
+    ul.append($('<li>').text(p.pattern).append(del));
   }
 
   function deleteButton(fn) {
@@ -67,9 +67,9 @@
     });
   }
 
-  function deletePattern(name, div, pattern) {
+  function deletePattern(name, div, n) {
     $.ajax({
-      url: '/_/' + name + '/' + encodeURIComponent(pattern),
+      url: '/_/' + name + '/' + n,
       type: 'DELETE',
       success: function (x) {
         div.replaceWith(nameSection(x));
