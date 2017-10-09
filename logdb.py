@@ -133,6 +133,21 @@ class LoggedDB:
     def set_pattern(self, name, n, pattern):
         self._log('SET', name, n, pattern)
 
+    def jsonify(self):
+        "Convert whole db into the JSON we send in API responses."
+        self._refresh()
+        return [self.jsonify_item(name, patterns)
+                for name, patterns in self.cache.items()]
+
+    def jsonify_item(self, name, patterns=None):
+        "Convert one item into the JSON we send in API responses."
+        ps = patterns or self.get_patterns(name)
+        return {
+            'name': name,
+            'patterns': [{'pattern': p, 'args': n} for n, p in ps.items()]
+        }
+
+
 
 if __name__ == '__main__':
 

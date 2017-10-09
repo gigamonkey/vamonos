@@ -1,4 +1,5 @@
-from db import DB
+#from db import DB
+from logdb import LoggedDB
 from flask import Flask, Response, redirect, request, send_file
 from flask.json import jsonify
 import re
@@ -22,7 +23,7 @@ db = None
 @app.before_first_request
 def _run_on_start():
     global db
-    db = DB("db.json")
+    db = LoggedDB("testdb")
 
 
 #
