@@ -143,23 +143,3 @@ class LoggedDB:
             'name': name,
             'patterns': [{'pattern': p, 'args': n} for n, p in ps.items()]
         }
-
-
-
-if __name__ == '__main__':
-
-    from sys import argv
-
-    db = LoggedDB('testdb')
-
-    if argv[1] == 'reader':
-        while True:
-            print(db.get_pattern('foo', 0))
-            sleep(2.0)
-
-    elif argv[1] == 'writer':
-        db.set_pattern('foo', 0, argv[2])
-
-    elif argv[1] == 'dump':
-        for (e, s) in db.log.read(0):
-            print('{}\t{}'.format(e, s))
