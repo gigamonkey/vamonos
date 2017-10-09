@@ -29,8 +29,8 @@ class DB:
 
     def jsonify_item(self, name):
         "Convert one item into the JSON we send in API responses."
-        patterns = [{'pattern': p, 'args': n}
-                    for n, p in self.get_patterns(name).items()]
+        ps = self.get_patterns(name).items()
+        patterns = [{'pattern': p, 'args': n} for n, p in ps]
         return {'name': name, 'patterns': patterns}
 
 
@@ -94,11 +94,10 @@ class LoggedDB (DB):
     def _replay(self, entry):
         "Replay a log entry to reflect it in our in-memory cache."
         verb, name, n, pattern = entry.split('\t')
-        n = int(n)
         if verb == 'SET':
-            self.cache[name][n] = pattern
+            self.cache[name][int(n)] = pattern
         elif verb == 'DELETE':
-            del self.cache[name][n]
+            del self.cache[name][int(n)]
         elif verb == 'DELETE_NAME':
             del self.cache[name]
         else:
