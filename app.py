@@ -138,18 +138,13 @@ def delete_name(name):
 
 @app.route("/_/<name>/<path:pattern>", methods=['PUT'])
 def put_pattern(name, pattern):
-    error = None
     n = count_args(pattern)
     if n is None:
         # FIXME: there's more well-formedness checking we could do
         # on the pattern.
-        error = "Mixed arg types."
+        return json_response({"error": "Mixed arg types"}, 400)
     else:
         db.set_pattern(name, n, pattern)
-
-    if error:
-        return json_response({"error": error}, 400)
-    else:
         return json_response(db.jsonify_item(name))
 
 
@@ -167,6 +162,10 @@ def delete_pattern(name, pattern):
 # Utilities
 #
 
+def json_response(js, code=200):
+    return Response(json.dumps(js), status=code, mimetype='application/json')
+
+
 def count_args(pattern):
     numbered_pats = re.findall('{\d+}', pattern)
     auto_pats = re.findall('{}', pattern)
@@ -177,7 +176,3 @@ def count_args(pattern):
         return 1 + max(int(x.strip('{}')) for x in numbered_pats)
     else:
         return len(auto_pats)
-
-
-def json_response(js, code=200):
-    return Response(json.dumps(js), status=code, mimetype='application/json')
