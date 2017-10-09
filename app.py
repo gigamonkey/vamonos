@@ -18,10 +18,69 @@ app.config['DEBUG'] = True
 db = None
 
 
+class DB:
+
+    def __init__(self, file):
+        self.file = file
+        self.cache = None
+
+
+    def load(self):
+        with open(self.file) as f:
+            self.cache = self.index_db(json.load(f))
+        return self
+
+
+    def save(self):
+        with open(self.file, "w") as f:
+            json.dump(self.cache, f)
+
+
+    def index_db(self, raw):
+        "Convert the on-disk format to an efficient in-memory representation."
+        db = defaultdict(dict)
+        for (name, patterns) in raw.items():
+            for (n, pattern) in patterns.items():
+                db[name][int(n)] = pattern
+        return db
+
+
+    def has_name(self, name):
+        return name in self.cache
+
+
+    def delete_name(self, name):
+        del self.cache[name]
+        self.save()
+
+
+    def get_patterns(self, name):
+        return self.cache[name]
+
+
+    def has_pattern(self, name, n):
+        return n in self.cache[name]
+
+
+    def get_pattern(self, name, n):
+        return self.cache[name][n]
+
+
+    def delete_pattern(self, name, n):
+        del self.cache[name][n]
+        self.save()
+
+
+    def set_pattern(self, name, n, pattern):
+        self.cache[name][n] = pattern
+        self.save()
+
+
+
 @app.before_first_request
 def _run_on_start():
     global db
-    db = load_db()
+    db = DB("db.json").load()
 
 
 #
@@ -43,8 +102,8 @@ def home():
 def redirection(name, rest):
     name = ''.join(filter(str.isalnum, name))
     args = rest.split('/') if rest else []
-    if len(args) in db[name]:
-        return redirect(db[name][len(args)].format(*args))
+    if db.has_pattern(name, len(args)):
+        return redirect(db.get_pattern(name, len(args)).format(*args))
     else:
         return send_file('static/index.html')
 
@@ -55,22 +114,21 @@ def redirection(name, rest):
 
 @app.route("/_/", methods=['GET'])
 def get_all():
-    return json_response(jasonify(db))
+    return json_response(jsonify(db.cache))
 
 
 @app.route("/_/<name>", methods=['GET'])
 def get_name(name):
-    if name in db:
-        return json_response(jasonify_item(name))
+    if db.has_name(name):
+        return json_response(jsonify_item(name))
     else:
         return json_response({}, 404)
 
 
 @app.route("/_/<name>", methods=['DELETE'])
 def delete_name(name):
-    if name in db:
-        del db[name]
-        save_db(db)
+    if db.has_name(name):
+        db.delete_name(name)
         return json_response({})
     else:
         return json_response({"error": "No such name"}, 404)
@@ -85,23 +143,20 @@ def put_pattern(name, pattern):
         # on the pattern.
         error = "Mixed arg types."
     else:
-        db[name][n] = pattern
-        save_db(db)
+        db.set_pattern(name, n, pattern)
 
     if error:
         return json_response({"error": error}, 400)
     else:
-        return json_response(jasonify_item(name))
+        return json_response(jsonify_item(name))
 
 
 @app.route("/_/<name>/<path:pattern>", methods=['DELETE'])
 def delete_pattern(name, pattern):
-    d = db[name]
     n = count_args(pattern)
-    if n is not None and n in d and d[n] == pattern:
-        del d[n]
-        save_db(db)
-        return json_response(jasonify_item(name))
+    if n is not None and db.has_pattern(name, n) and db.get_pattern(name, n) == pattern:
+        db.delete_pattern(name, n)
+        return json_response(jsonify_item(name))
     else:
         return json_response({"error": "No such pattern"}, 404)
 
@@ -126,37 +181,14 @@ def json_response(js, code=200):
     return Response(json.dumps(js), status=code, mimetype='application/json')
 
 
-#
-# DB
-#
-
-def save_db(db):
-    with open("db.json", "w") as f:
-        json.dump(db, f)
-
-
-def load_db():
-    with open("db.json") as f:
-        return index_db(json.load(f))
-
-
-def index_db(raw):
-    "Convert the on-disk format to an efficient in-memory representation."
-    db = defaultdict(dict)
-    for (name, patterns) in raw.items():
-        for (n, pattern) in patterns.items():
-            db[name][int(n)] = pattern
-    return db
-
-
-def jasonify(db):
+def jsonify(cache):
     "Convert whole db into the JSON we send in API responses."
-    return [jasonify_item(name, patterns) for name, patterns in db.items()]
+    return [jsonify_item(name, patterns) for name, patterns in cache.items()]
 
 
-def jasonify_item(name, patterns=None):
+def jsonify_item(name, patterns=None):
     "Convert one item into the JSON we send in API responses."
-    ps = patterns or db[name]
+    ps = patterns or db.get_patterns(name)
     return {
         'name': name,
         'patterns': [{'pattern': p, 'args': n} for n, p in ps.items()]
