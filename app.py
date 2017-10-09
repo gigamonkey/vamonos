@@ -24,6 +24,15 @@ def _run_on_start():
     db = LoggedDB("testdb")
 
 
+@app.after_request
+def add_header(r):
+    if app.config['DEBUG']:
+        r.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, public, max-age=0'
+        r.headers['Pragma'] = 'no-cache'
+        r.headers['Expires'] = '0'
+    return r
+
+
 #
 # Web UI -- single page app that lets a user manage existing names,
 # create new names, see stats about what names are used, etc.
@@ -44,7 +53,7 @@ def redirection(name, rest):
     name = ''.join(filter(str.isalnum, name))
     args = rest.split('/') if rest else []
     if db.has_pattern(name, len(args)):
-        return redirect(db.get_pattern(name, len(args)).format(*args))
+        return redirect(db.get_pattern(name, len(args)).format(*args)), 307
     else:
         return send_file('static/index.html')
 
