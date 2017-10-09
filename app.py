@@ -1,6 +1,6 @@
 from db import DB
 from flask import Flask, Response, redirect, request, send_file
-import json
+from flask.json import jsonify
 import re
 
 # We use HTTP 307 mainly so the redirection can change. This also
@@ -9,6 +9,7 @@ import re
 # TODO:
 #
 # - Thread safe external storage of db.
+# - Change REST API so patterns are created via POST
 # - Use http://fontawesome.io/ icons in Web UI.
 
 app = Flask(__name__)
@@ -55,24 +56,24 @@ def redirection(name, rest):
 
 @app.route("/_/", methods=['GET'])
 def get_all():
-    return json_response(db.jsonify())
+    return jsonify(db.jsonify())
 
 
 @app.route("/_/<name>", methods=['GET'])
 def get_name(name):
     if db.has_name(name):
-        return json_response(db.jsonify_item(name))
+        return jsonify(db.jsonify_item(name))
     else:
-        return json_response({}, 404)
+        return jsonify({}), 404
 
 
 @app.route("/_/<name>", methods=['DELETE'])
 def delete_name(name):
     if db.has_name(name):
         db.delete_name(name)
-        return json_response({})
+        return jsonify({})
     else:
-        return json_response({"error": "No such name"}, 404)
+        return jsonify({"error": "No such name"}), 404
 
 
 @app.route("/_/<name>/<path:pattern>", methods=['PUT'])
@@ -81,28 +82,24 @@ def put_pattern(name, pattern):
     if n is None:
         # FIXME: there's more well-formedness checking we could do
         # on the pattern.
-        return json_response({"error": "Mixed arg types"}, 400)
+        return jsonify({"error": "Mixed arg types"}), 400
     else:
         db.set_pattern(name, n, pattern)
-        return json_response(db.jsonify_item(name))
+        return jsonify(db.jsonify_item(name))
 
 
 @app.route("/_/<name>/<int:n>", methods=['DELETE'])
 def delete_pattern(name, n):
     if db.get_pattern(name, n):
         db.delete_pattern(name, n)
-        return json_response(db.jsonify_item(name))
+        return jsonify(db.jsonify_item(name))
     else:
-        return json_response({"error": "No such pattern"}, 404)
+        return jsonify({"error": "No such pattern"}), 404
 
 
 #
 # Utilities
 #
-
-def json_response(js, code=200):
-    return Response(json.dumps(js), status=code, mimetype='application/json')
-
 
 def count_args(pattern):
     numbered_pats = re.findall('{\d+}', pattern)
