@@ -1,7 +1,6 @@
-#from db import DB
-from logdb import LoggedDB
 from flask import Flask, Response, redirect, request, send_file
 from flask.json import jsonify
+from db import LoggedDB
 import re
 
 # We use HTTP 307 mainly so the redirection can change. This also
