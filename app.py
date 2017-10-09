@@ -22,24 +22,15 @@ class DB:
 
     def __init__(self, file):
         self.file = file
-        self.cache = None
-
-    def load(self):
-        with open(self.file) as f:
-            self.cache = self.index_db(json.load(f))
-        return self
+        with open(file) as f:
+            self.cache = defaultdict(dict)
+            for (name, patterns) in json.load(f).items():
+                for (n, pattern) in patterns.items():
+                    self.cache[name][int(n)] = pattern
 
     def save(self):
         with open(self.file, "w") as f:
             json.dump(self.cache, f)
-
-    def index_db(self, raw):
-        "Convert the on-disk format to an efficient in-memory representation."
-        db = defaultdict(dict)
-        for (name, patterns) in raw.items():
-            for (n, pattern) in patterns.items():
-                db[name][int(n)] = pattern
-        return db
 
     def has_name(self, name):
         return name in self.cache
@@ -82,7 +73,7 @@ class DB:
 @app.before_first_request
 def _run_on_start():
     global db
-    db = DB("db.json").load()
+    db = DB("db.json")
 
 
 #
