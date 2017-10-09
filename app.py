@@ -24,17 +24,14 @@ class DB:
         self.file = file
         self.cache = None
 
-
     def load(self):
         with open(self.file) as f:
             self.cache = self.index_db(json.load(f))
         return self
 
-
     def save(self):
         with open(self.file, "w") as f:
             json.dump(self.cache, f)
-
 
     def index_db(self, raw):
         "Convert the on-disk format to an efficient in-memory representation."
@@ -44,42 +41,34 @@ class DB:
                 db[name][int(n)] = pattern
         return db
 
-
     def has_name(self, name):
         return name in self.cache
-
 
     def delete_name(self, name):
         del self.cache[name]
         self.save()
 
-
     def get_patterns(self, name):
         return self.cache[name]
-
 
     def has_pattern(self, name, n):
         return n in self.cache[name]
 
-
     def get_pattern(self, name, n):
         return self.cache[name][n]
-
 
     def delete_pattern(self, name, n):
         del self.cache[name][n]
         self.save()
 
-
     def set_pattern(self, name, n, pattern):
         self.cache[name][n] = pattern
         self.save()
 
-
     def jsonify(self):
         "Convert whole db into the JSON we send in API responses."
-        return [self.jsonify_item(name, patterns) for name, patterns in self.cache.items()]
-
+        return [self.jsonify_item(name, patterns)
+                for name, patterns in self.cache.items()]
 
     def jsonify_item(self, name, patterns=None):
         "Convert one item into the JSON we send in API responses."
@@ -167,7 +156,7 @@ def put_pattern(name, pattern):
 @app.route("/_/<name>/<path:pattern>", methods=['DELETE'])
 def delete_pattern(name, pattern):
     n = count_args(pattern)
-    if n is not None and db.has_pattern(name, n) and db.get_pattern(name, n) == pattern:
+    if n is not None and db.get_pattern(name, n) == pattern:
         db.delete_pattern(name, n)
         return json_response(db.jsonify_item(name))
     else:
