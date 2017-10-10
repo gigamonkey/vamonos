@@ -8,7 +8,7 @@ import re
 
 # TODO:
 #
-# - Change REST API so patterns are created via POST
+# - Change in memory cache form to one that deserializes from JSON without extra frobbing.
 # - Use http://fontawesome.io/ icons in Web UI.
 
 app = Flask(__name__)
@@ -39,7 +39,7 @@ def add_header(r):
 #
 
 @app.route("/")
-def home():
+def index():
     return send_file('static/index.html')
 
 
@@ -75,17 +75,9 @@ def get_name(name):
         return jsonify({}), 404
 
 
-@app.route("/_/<name>", methods=['DELETE'])
-def delete_name(name):
-    if db.has_name(name):
-        db.delete_name(name)
-        return jsonify({})
-    else:
-        return jsonify({"error": "No such name"}), 404
-
-
-@app.route("/_/<name>/<path:pattern>", methods=['PUT'])
-def put_pattern(name, pattern):
+@app.route("/_/<name>", methods=['POST'])
+def post_pattern(name):
+    pattern = request.form['pattern']
     n = count_args(pattern)
     if n is None:
         # FIXME: there's more well-formedness checking we could do
@@ -93,7 +85,18 @@ def put_pattern(name, pattern):
         return jsonify({"error": "Mixed arg types"}), 400
     else:
         db.set_pattern(name, n, pattern)
-        return jsonify(db.jsonify_item(name))
+        r = jsonify(db.jsonify_item(name))
+        r.headers['Location'] = '/_/{}/{}'.format(name, n)
+        return r, 201
+
+
+@app.route("/_/<name>", methods=['DELETE'])
+def delete_name(name):
+    if db.has_name(name):
+        db.delete_name(name)
+        return jsonify({})
+    else:
+        return jsonify({"error": "No such name"}), 404
 
 
 @app.route("/_/<name>/<int:n>", methods=['DELETE'])

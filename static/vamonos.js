@@ -46,19 +46,19 @@
 
   function makeForm(name, div) {
     return $('<input>').attr('size', 50).change(function (x) {
-      putPattern(name, div, $(x.target).val());
+      postPattern(name, div, $(x.target).val());
     });
   }
 
 
   // API functions
 
-  function putPattern(name, div, pattern) {
+  function postPattern(name, div, pattern) {
     $.ajax({
-      url: '/_/' + name + '/' + encodeURIComponent(pattern),
-      type: 'PUT',
+      url: '/_/' + name,
+      type: 'POST',
+      data: { pattern: pattern },
       success: function (x) {
-        console.log(x);
         div.replaceWith(nameSection(x));
       },
       error: function (x) {
