@@ -1,7 +1,6 @@
 from collections import defaultdict
 from fcntl import LOCK_EX, LOCK_SH, LOCK_UN, flock
 from os import fsync, SEEK_SET, SEEK_END
-from time import sleep
 import json
 
 
