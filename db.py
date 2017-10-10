@@ -29,7 +29,7 @@ class DB:
 
     def jsonify_item(self, name):
         "Convert one item into the JSON we send in API responses."
-        ps = self.get_patterns(name).items()
+        ps = self.get_patterns(name)
         patterns = [{'pattern': p, 'args': n} for n, p in ps]
         return {'name': name, 'patterns': patterns}
 
@@ -56,7 +56,7 @@ class SimpleDB (DB):
         self._save()
 
     def get_patterns(self, name):
-        return self.cache[name]
+        return self.cache[name].items()
 
     def has_pattern(self, name, n):
         return n in self.cache[name]
@@ -161,7 +161,7 @@ startup.
 
     def get_patterns(self, name):
         self._refresh()
-        return self.cache[name]
+        return self.cache[name].items()
 
     def has_pattern(self, name, n):
         self._refresh()
