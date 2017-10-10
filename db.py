@@ -7,26 +7,6 @@ import json
 
 class DB:
 
-    def has_name(self, name): pass
-
-    def delete_name(self, name): pass
-
-    def get_patterns(self, name): pass
-
-    def has_pattern(self, name, n): pass
-
-    def get_pattern(self, name, n): pass
-
-    def delete_pattern(self, name, n): pass
-
-    def set_pattern(self, name, n, pattern): pass
-
-    def names(self): pass
-
-
-
-class LoggedDB (DB):
-
     """\
 A database implementation that sits on top of a write-ahead log and an
 in-memory cache. Mutations to the database are written to the log and

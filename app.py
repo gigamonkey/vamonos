@@ -1,6 +1,6 @@
 from flask import Flask, Response, redirect, request, send_file
 from flask.json import jsonify
-from db import LoggedDB
+from db import DB
 import re
 
 # We use HTTP 307 mainly so the redirection can change. This also
@@ -14,13 +14,7 @@ app = Flask(__name__)
 
 app.config['DEBUG'] = True
 
-db = None
-
-
-@app.before_first_request
-def _run_on_start():
-    global db
-    db = LoggedDB("testdb")
+db = DB("testdb")
 
 
 @app.after_request
