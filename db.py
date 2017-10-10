@@ -63,12 +63,13 @@ startup.
         verb, name, n, pattern = entry.split('\t')
         if verb == 'SET':
             n = int(n)
-            ensure(self.cache[name], n)
+            expand(self.cache[name], n)
             self.cache[name][n] = pattern
         elif verb == 'DELETE':
             n = int(n)
-            ensure(self.cache[name], n)
+            expand(self.cache[name], n)
             self.cache[name][n] = None
+            shrink(self.cache[name])
         elif verb == 'DELETE_NAME':
             del self.cache[name]
         else:
@@ -174,6 +175,12 @@ class Log:
                 yield line[:-1], pos
             flock(f, LOCK_UN)
 
-def ensure(list, size):
-    for i in range(1 + (size - len(list))):
-        list.append(None)
+#
+# Utilities
+#
+
+def expand(list, size):
+    list += [None] * (1 + (size - len(list)))
+
+def shrink(list):
+    while list[-1] is None: list.pop()
