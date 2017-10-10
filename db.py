@@ -23,15 +23,6 @@ class DB:
 
     def names(self): pass
 
-    def jsonify(self):
-        "Convert whole db into the JSON we send in API responses."
-        return [self.jsonify_item(name) for name in self.names()]
-
-    def jsonify_item(self, name):
-        "Convert one item into the JSON we send in API responses."
-        ps = self.get_patterns(name)
-        patterns = [{'pattern': p, 'args': n} for n, p in ps if p is not None]
-        return {'name': name, 'patterns': patterns}
 
 
 class LoggedDB (DB):
@@ -63,6 +54,7 @@ startup.
         verb, name, n, pattern = entry.split('\t')
         if verb == 'SET':
             n = int(n)
+            if name not in self.cache: self.cache[name] = []
             expand(self.cache[name], n)
             self.cache[name][n] = pattern
         elif verb == 'DELETE':
@@ -120,11 +112,11 @@ startup.
 
     def get_patterns(self, name):
         self._refresh()
-        return enumerate(self.cache[name])
+        return [(n, p) for n, p in enumerate(self.cache[name]) if p is not None]
 
     def has_pattern(self, name, n):
         self._refresh()
-        return n in self.cache[name]
+        return self.has_name(name) and n < len(self.cache[name]) and self.cache[name][n] is not None
 
     def get_pattern(self, name, n):
         self._refresh()

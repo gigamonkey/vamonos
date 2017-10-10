@@ -63,13 +63,13 @@ def redirection(name, rest):
 
 @app.route("/_/", methods=['GET'])
 def get_all():
-    return jsonify(db.jsonify())
+    return jsonify(jsonify_db(db))
 
 
 @app.route("/_/<name>", methods=['GET'])
 def get_name(name):
     if db.has_name(name):
-        return jsonify(db.jsonify_item(name))
+        return jsonify(jsonify_item(db, name))
     else:
         return jsonify({}), 404
 
@@ -84,7 +84,7 @@ def post_pattern(name):
         return jsonify({"error": "Mixed arg types"}), 400
     else:
         db.set_pattern(name, n, pattern)
-        r = jsonify(db.jsonify_item(name))
+        r = jsonify(jsonify_item(db, name))
         r.headers['Location'] = '/_/{}/{}'.format(name, n)
         return r, 201
 
@@ -102,7 +102,7 @@ def delete_name(name):
 def delete_pattern(name, n):
     if db.get_pattern(name, n):
         db.delete_pattern(name, n)
-        return jsonify(db.jsonify_item(name))
+        return jsonify(jsonify_item(db, name))
     else:
         return jsonify({"error": "No such pattern"}), 404
 
@@ -121,3 +121,12 @@ def count_args(pattern):
         return 1 + max(int(x.strip('{}')) for x in numbered_pats)
     else:
         return len(auto_pats)
+
+def jsonify_db(db):
+    "Convert whole db into the JSON we send in API responses."
+    return [jsonify_item(db, name) for name in db.names()]
+
+def jsonify_item(db, name):
+    "Convert one item into the JSON we send in API responses."
+    patterns = [{'pattern': p, 'args': n} for n, p in db.get_patterns(name)]
+    return {'name': name, 'patterns': patterns}
