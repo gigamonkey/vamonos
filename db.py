@@ -23,7 +23,7 @@ startup.
             self._load()
         except:
             self.low_water_mark = 0
-            self.cache = defaultdict(dict)
+            self.cache = defaultdict(list)
 
     def _log(self, *entry):
         "Log data to our transaction log."
@@ -34,7 +34,6 @@ startup.
         verb, name, n, pattern = entry.split('\t')
         if verb == 'SET':
             n = int(n)
-            if name not in self.cache: self.cache[name] = []
             expand(self.cache[name], n)
             self.cache[name][n] = pattern
         elif verb == 'DELETE':
@@ -63,7 +62,7 @@ startup.
         with open(self.file) as f:
             flock(f, LOCK_EX)
             data = json.load(f)
-            self.cache = data['cache']
+            self.cache = defaultdict(list, data['cache'])
             self.low_water_mark = data['low_water_mark']
             flock(f, LOCK_UN)
 
@@ -96,9 +95,7 @@ startup.
 
     def has_pattern(self, name, n):
         self._refresh()
-        return (self.has_name(name) and
-                n < len(self.cache[name]) and
-                self.cache[name][n] is not None)
+        return n < len(self.cache[name]) and self.cache[name][n] is not None
 
     def get_pattern(self, name, n):
         self._refresh()
