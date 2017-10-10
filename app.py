@@ -116,9 +116,11 @@ def count_args(pattern):
     else:
         return len(auto_pats)
 
+
 def jsonify_db(db):
     "Convert whole db into the JSON we send in API responses."
     return [jsonify_item(db, name) for name in db.names()]
+
 
 def jsonify_item(db, name):
     "Convert one item into the JSON we send in API responses."

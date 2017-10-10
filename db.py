@@ -96,7 +96,9 @@ startup.
 
     def has_pattern(self, name, n):
         self._refresh()
-        return self.has_name(name) and n < len(self.cache[name]) and self.cache[name][n] is not None
+        return (self.has_name(name) and
+                n < len(self.cache[name]) and
+                self.cache[name][n] is not None)
 
     def get_pattern(self, name, n):
         self._refresh()
@@ -147,12 +149,14 @@ class Log:
                 yield line[:-1], pos
             flock(f, LOCK_UN)
 
+
 #
 # Utilities
 #
 
 def expand(list, size):
     list += [None] * (1 + (size - len(list)))
+
 
 def shrink(list):
     while list[-1] is None: list.pop()
