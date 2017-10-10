@@ -1,4 +1,4 @@
-from flask import Flask, Response, redirect, request, send_file
+from flask import Flask, redirect, request, send_file
 from flask.json import jsonify
 from db import DB
 import re
