@@ -30,50 +30,8 @@ class DB:
     def jsonify_item(self, name):
         "Convert one item into the JSON we send in API responses."
         ps = self.get_patterns(name)
-        patterns = [{'pattern': p, 'args': n} for n, p in ps]
+        patterns = [{'pattern': p, 'args': n} for n, p in ps if p is not None]
         return {'name': name, 'patterns': patterns}
-
-
-class SimpleDB (DB):
-
-    def __init__(self, file):
-        self.file = file
-        with open(file) as f:
-            self.cache = defaultdict(dict)
-            for (name, patterns) in json.load(f).items():
-                for (n, pattern) in patterns.items():
-                    self.cache[name][int(n)] = pattern
-
-    def _save(self):
-        with open(self.file, "w") as f:
-            json.dump(self.cache, f)
-
-    def has_name(self, name):
-        return name in self.cache
-
-    def delete_name(self, name):
-        del self.cache[name]
-        self._save()
-
-    def get_patterns(self, name):
-        return self.cache[name].items()
-
-    def has_pattern(self, name, n):
-        return n in self.cache[name]
-
-    def get_pattern(self, name, n):
-        return self.cache[name][n]
-
-    def delete_pattern(self, name, n):
-        del self.cache[name][n]
-        self._save()
-
-    def set_pattern(self, name, n, pattern):
-        self.cache[name][n] = pattern
-        self._save()
-
-    def names(self):
-        return self.cache.keys()
 
 
 class LoggedDB (DB):
@@ -86,7 +44,6 @@ up to date with any changes made by this or other processes. We also
 write out the cache to disk to avoid having to replay the whole log at
 startup.
     """
-
 
     def __init__(self, name):
         self.file = name + '.data'
@@ -105,9 +62,13 @@ startup.
         "Replay a log entry to reflect it in our in-memory cache."
         verb, name, n, pattern = entry.split('\t')
         if verb == 'SET':
-            self.cache[name][int(n)] = pattern
+            n = int(n)
+            ensure(self.cache[name], n)
+            self.cache[name][n] = pattern
         elif verb == 'DELETE':
-            del self.cache[name][int(n)]
+            n = int(n)
+            ensure(self.cache[name], n)
+            self.cache[name][n] = None
         elif verb == 'DELETE_NAME':
             del self.cache[name]
         else:
@@ -128,12 +89,9 @@ startup.
         "Load cached data from disk so we don't have to replay the whole log."
         with open(self.file) as f:
             flock(f, LOCK_EX)
-            self.cache = defaultdict(dict)
             data = json.load(f)
+            self.cache = data['cache']
             self.low_water_mark = data['low_water_mark']
-            for (name, patterns) in data['cache'].items():
-                for (n, pattern) in patterns.items():
-                    self.cache[name][int(n)] = pattern
             flock(f, LOCK_UN)
 
     def _save(self):
@@ -148,9 +106,9 @@ startup.
         with open(self.file, 'w') as f:
             flock(f, LOCK_EX)
             json.dump({
-                'low_water_mark': self.low_water_mark,
-                'cache': self.cache
-            }, f)
+                'cache': self.cache,
+                'low_water_mark': self.low_water_mark
+            }, f, sort_keys=True, indent=2)
             flock(f, LOCK_UN)
 
     # Accessors -- must check for new entries in log.
@@ -161,7 +119,7 @@ startup.
 
     def get_patterns(self, name):
         self._refresh()
-        return self.cache[name].items()
+        return enumerate(self.cache[name])
 
     def has_pattern(self, name, n):
         self._refresh()
@@ -215,3 +173,7 @@ class Log:
                     break
                 yield line[:-1], pos
             flock(f, LOCK_UN)
+
+def ensure(list, size):
+    for i in range(1 + (size - len(list))):
+        list.append(None)

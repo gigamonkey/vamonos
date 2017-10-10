@@ -8,7 +8,6 @@ import re
 
 # TODO:
 #
-# - Change in memory cache form to one that deserializes from JSON without extra frobbing.
 # - Use http://fontawesome.io/ icons in Web UI.
 
 app = Flask(__name__)
