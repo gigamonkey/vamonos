@@ -71,8 +71,8 @@ startup.
         # someone else has read farther in the log than us and gotten
         # in and written out their cache to disk. But it doesn't
         # really matter since we never actually read from the on-disk
-        # cache at startup. Rolling the cache back in time will, at
-        # worst, make some processes have to reply a few more log
+        # cache except at startup. Rolling the cache back in time will,
+        # at worst, make some processes have to reply a few more log
         # records than they might have otherwise.
         with open(self.file, 'w') as f:
             flock(f, LOCK_EX)
