@@ -18,6 +18,18 @@ li {
 }
 
 .new-name {
-    border: 3px solid blue;
-    padding: 3px;
+    border: 3px solid #ddf;
+    padding: 12px;
+}
+
+.url-input {
+    width: 90%;
+}
+
+.suggestions {
+    text-align: center;
+}
+
+.new-link {
+    text-align: center;
 }

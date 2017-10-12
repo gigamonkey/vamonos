@@ -1,24 +1,50 @@
 (function () {
 
   function go() {
-    maybeAddName(window.location.pathname);
     $.ajax('/_/', { success: addNamesFromDB });
   }
 
-  function maybeAddName(p) {
-    if (p != '/') {
-      name = p.substring(1, p.indexOf('/', 1))
-      $('body').append(nameSection({'name': name, 'patterns': []}).addClass('new-name'));
-      history.replaceState({}, '', '/');
-    }
-  }
-
   function addNamesFromDB (db) {
+    maybeAddNewName(window.location.pathname, db);
     $.each(_.sortBy(db, ['name']), function (i, item) {
       if (item.patterns.length > 0) {
         $('body').append(nameSection(item));
       }
     });
+  }
+
+  function maybeAddNewName(p, db) {
+    if (p != '/') {
+      name = p.substring(1, p.indexOf('/', 1))
+      $('body').append(newNameSection(name, db));
+      history.replaceState({}, '', '/');
+    }
+  }
+
+  function newNameSection(name, db) {
+
+    let div = $('<div>');
+    div.append($('<p>')
+               .append('No links for ')
+               .append($('<b>').text(name))
+               .append('. Where would you like it to redirect?'));
+    div.append($('<p>').addClass('new-link').append(makeForm(name, div)));
+    div.append($('<p>').text('Or did you maybe mean one of these?'));
+
+    let suggestions = $('<p>').addClass('suggestions');
+
+    // FIXME: arguably should do this on the API side.
+    let items = _(_.filter(_.sortBy(db, ['name']), function (x) { return x.patterns.length > 0; }));
+
+    let x = items.next();
+    while (!x.done) {
+      let item = x.value;
+      suggestions.append($('<a>').text(item.name).attr('href', '/' + item.name));
+      x = items.next();
+      if (!x.done) suggestions.append(' | ');
+    }
+
+    return div.append(suggestions).addClass('new-name');
   }
 
   function nameSection(item) {
@@ -45,7 +71,7 @@
   }
 
   function makeForm(name, div) {
-    return $('<input>').attr('size', 50).change(function (x) {
+    return $('<input>').addClass('url-input').change(function (x) {
       postPattern(name, div, $(x.target).val());
     });
   }
