@@ -22,12 +22,12 @@
   }
 
   function nameSection(item) {
-    var name     = item.name;
-    var patterns = _.sortBy(item.patterns, ['args'])
+    let name     = item.name;
+    let patterns = _.sortBy(item.patterns, ['args'])
 
-    var div = $('<div>');
-    var h1  = $('<h1>').text(name).append(deleteButton(function () { deleteName(name, div); }));
-    var ul  = $('<ul>');
+    let div = $('<div>');
+    let h1  = $('<h1>').text(name).append(deleteButton(function () { deleteName(name, div); }));
+    let ul  = $('<ul>');
 
     $.each(patterns, function (i, p) { pattern(div, ul, name, p); });
     ul.append($('<li>').append(makeForm(name, div)))
@@ -36,7 +36,7 @@
   }
 
   function pattern(div, ul, name, p) {
-    var del = deleteButton(function () { deletePattern(name, div, p.args); })
+    let del = deleteButton(function () { deletePattern(name, div, p.args); })
     ul.append($('<li>').text(p.pattern).append(del));
   }
 
