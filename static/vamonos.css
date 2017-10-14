@@ -1,6 +1,9 @@
 body {
     font-family: sans-serif;
     color: #226;
+}
+
+#container {
     width: 4in;
     margin-left: auto;
     margin-right: auto;
@@ -36,4 +39,18 @@ li {
 
 .new-link {
     text-align: center;
+}
+
+.login {
+    width: 100%;
+    margin: 0;
+    text-align: right;
+    background: #eef;
+    padding: 6px;
+    font-size: 12px;
+}
+
+
+.login span {
+    padding-right: 12px;
 }

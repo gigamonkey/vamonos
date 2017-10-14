@@ -2,13 +2,18 @@
 
   function go() {
     $.ajax('/_/', { success: addNamesFromDB });
+    $.ajax('/!/user', { success: showEmail });
+  }
+
+  function showEmail(n) {
+    $('body').prepend($('<div>').addClass('login').append($('<span>').text(n)));
   }
 
   function addNamesFromDB (db) {
     maybeAddNewName(window.location.pathname, db);
     $.each(_.sortBy(db, ['name']), function (i, item) {
       if (item.patterns.length > 0) {
-        $('body').append(nameSection(item));
+        $('#container').append(nameSection(item));
       }
     });
   }
@@ -44,7 +49,7 @@
       if (!x.done) suggestions.append(' | ');
     }
     div.append(suggestions).addClass('new-name');
-    $('body').append(div);
+    $('#container').append(div);
     input.focus();
   }
 
