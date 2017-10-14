@@ -81,6 +81,7 @@ def auth():
 
     if x is not None:
         session['authenticated'] = True
+        session['email'] = x['jwt']['payload']['email']
         return redirect('/')
     else:
         return jsonify({'args': args, 'returned': x}), 401
@@ -89,6 +90,11 @@ def auth():
 def logout():
     session['authenticated'] = False
     return "Okay", 200
+
+@app.route("/!/user", methods=['GET'])
+@authenticated
+def user():
+    return jsonify(session['email']), 200
 
 
 #
