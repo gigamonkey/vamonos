@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-
 from base64 import urlsafe_b64decode
-from os import urandom
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import urlopen, Request
@@ -77,25 +74,3 @@ def decode_jwt(jwt):
         'payload': decode(payload),
         'mac': decode(mac, text=False)
     }
-
-
-if __name__ == '__main__':
-
-    disco, config = init(discovery_url, config_file)
-
-    if False:
-        auth_endpoint = disco['authorization_endpoint']
-        client_id     = config['client_id']
-        uri           = config['redirect_uris'][0]
-        state         = urandom(16).hex()
-        nonce         = urandom(8).hex()
-        url = authentication_url(auth_endpoint, client_id, uri, state, nonce)
-        print(url)
-    else:
-        token_endpoint = disco['token_endpoint']
-        code           = '4/WpX4nJlQMeJQPR-s8Y7rSKTtmGeYB2_kOEaDJ32oKXA'
-        client_id      = config['client_id']
-        client_secret  = config['client_secret']
-        uri            = config['redirect_uris'][0]
-
-        postback(token_endpoint, code, client_id, client_secret, uri)
