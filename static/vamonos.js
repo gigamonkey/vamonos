@@ -52,7 +52,7 @@
     let patterns = _.sortBy(item.patterns, ['args'])
 
     let div = $('<div>');
-    let h1  = $('<h1>').text(name).append(deleteButton(function () { deleteName(name, div); }));
+    let h1  = $('<h1>').text(name).append(' ').append(deleteButton(function () { deleteName(name, div); }));
     let ul  = $('<ul>');
 
     $.each(patterns, function (i, p) { pattern(div, ul, name, p); });
@@ -67,7 +67,7 @@
   }
 
   function deleteButton(fn) {
-    return $('<span>').addClass('delete').text('❌').click(fn)
+    return $('<i>').addClass('delete').addClass('fa').addClass('fa-minus-circle').attr('aria-hidden', true).click(fn);
   }
 
   function makeForm(name, div) {
