@@ -1,7 +1,10 @@
+from auth import init, authentication_url, postback
+from db import DB
 from flask import Flask, redirect, request, send_file
 from flask.json import jsonify
-from db import DB
+from os import urandom
 import re
+import json
 
 # We use HTTP 307 mainly so the redirection can change. This also
 # allows us to log the use of links.
@@ -10,12 +13,14 @@ import re
 #
 # - Hook up to Google authentication (https://developers.google.com/identity/protocols/OpenIDConnect)
 
+discovery_url     = 'https://accounts.google.com/.well-known/openid-configuration'
+oauth_config_file = 'oauth-config.json'
+
 app = Flask(__name__)
-
 app.config['DEBUG'] = True
-
 db = DB("testdb")
 
+disco, config = init(discovery_url, oauth_config_file)
 
 @app.after_request
 def add_header(r):
@@ -33,7 +38,53 @@ def add_header(r):
 
 @app.route("/")
 def index():
+
+    # TODO: check for cookie indicating user is already logged in. If
+    # not present put them through OAuth dance which should end up
+    # with them being redirected back here with a authentication
+    # cookie set.
+
     return send_file('static/index.html')
+
+
+#
+# Authentication endpoints
+#
+
+# FIXME: This is just for testing.
+@app.route("/!/login")
+def login():
+    auth_endpoint = disco['authorization_endpoint']
+    client_id = config['client_id']
+    uri       = config['redirect_uris'][0]
+
+
+    state     = urandom(16).hex()
+    nonce     = urandom(8).hex()
+    return redirect(authentication_url(auth_endpoint, client_id, uri, state, nonce)), 302
+
+
+@app.route("/!/auth", methods=['GET'])
+def auth():
+    "Gets the second step of the OAuth dance."
+    args = request.args
+
+
+    # TODO: Check state in args['state'] to make sure it matches what
+    # we sent in redirect.
+
+    token_endpoint = disco['token_endpoint']
+    code           = args['code']
+    client_id      = config['client_id']
+    client_secret  = config['client_secret']
+    uri            = config['redirect_uris'][0]
+    x = postback(token_endpoint, code, client_id, client_secret, uri)
+
+    # TODO: Check nonce hasn't been seen before, etc. and then return
+    # a redirect to wherever they were trying to go (recorded in
+    # state) when we forced the authentication.
+
+    return jsonify({'args': args, 'returned': x}), 401
 
 
 #
@@ -48,6 +99,7 @@ def redirection(name, rest):
     if db.has_pattern(name, len(args)):
         return redirect(db.get_pattern(name, len(args)).format(*args)), 307
     else:
+        # TODO: need to check login here.
         return send_file('static/index.html')
 
 
