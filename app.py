@@ -8,7 +8,7 @@ import re
 
 # TODO:
 #
-# - Use http://fontawesome.io/ icons in Web UI.
+# - Hook up to Google authentication (https://developers.google.com/identity/protocols/OpenIDConnect)
 
 app = Flask(__name__)
 
