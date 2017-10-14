@@ -1,10 +1,11 @@
 from auth import init, authentication_url, postback
 from db import DB
-from flask import Flask, redirect, request, send_file
+from flask import Flask, redirect, request, send_file, session
 from flask.json import jsonify
+from functools import wraps
 from os import urandom
-import re
 import json
+import re
 
 # We use HTTP 307 mainly so the redirection can change. This also
 # allows us to log the use of links.
@@ -18,9 +19,21 @@ oauth_config_file = 'oauth-config.json'
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
+app.secret_key = urandom(12)
 db = DB("testdb")
 
 disco, config = init(discovery_url, oauth_config_file)
+
+def authenticated(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not session.get('authenticated'):
+            return authenticate()
+
+        return f(*args, **kwargs)
+
+    return wrapper
+
 
 @app.after_request
 def add_header(r):
@@ -37,32 +50,14 @@ def add_header(r):
 #
 
 @app.route("/")
+@authenticated
 def index():
-
-    # TODO: check for cookie indicating user is already logged in. If
-    # not present put them through OAuth dance which should end up
-    # with them being redirected back here with a authentication
-    # cookie set.
-
     return send_file('static/index.html')
 
 
 #
-# Authentication endpoints
+# Authentication endpoint
 #
-
-# FIXME: This is just for testing.
-@app.route("/!/login")
-def login():
-    auth_endpoint = disco['authorization_endpoint']
-    client_id = config['client_id']
-    uri       = config['redirect_uris'][0]
-
-
-    state     = urandom(16).hex()
-    nonce     = urandom(8).hex()
-    return redirect(authentication_url(auth_endpoint, client_id, uri, state, nonce)), 302
-
 
 @app.route("/!/auth", methods=['GET'])
 def auth():
@@ -84,7 +79,16 @@ def auth():
     # a redirect to wherever they were trying to go (recorded in
     # state) when we forced the authentication.
 
-    return jsonify({'args': args, 'returned': x}), 401
+    if x is not None:
+        session['authenticated'] = True
+        return redirect('/')
+    else:
+        return jsonify({'args': args, 'returned': x}), 401
+
+@app.route("/!/logout", methods=['GET'])
+def logout():
+    session['authenticated'] = False
+    return "Okay", 200
 
 
 #
@@ -93,6 +97,7 @@ def auth():
 
 @app.route("/<name>/", defaults={'rest': None})
 @app.route("/<name>/<path:rest>")
+@authenticated
 def redirection(name, rest):
     name = ''.join(filter(str.isalnum, name))
     args = rest.split('/') if rest else []
@@ -108,11 +113,13 @@ def redirection(name, rest):
 #
 
 @app.route("/_/", methods=['GET'])
+@authenticated
 def get_all():
     return jsonify(jsonify_db(db))
 
 
 @app.route("/_/<name>", methods=['GET'])
+@authenticated
 def get_name(name):
     if db.has_name(name):
         return jsonify(jsonify_item(db, name))
@@ -121,6 +128,7 @@ def get_name(name):
 
 
 @app.route("/_/<name>", methods=['POST'])
+@authenticated
 def post_pattern(name):
     pattern = request.form['pattern']
     n = count_args(pattern)
@@ -136,6 +144,7 @@ def post_pattern(name):
 
 
 @app.route("/_/<name>", methods=['DELETE'])
+@authenticated
 def delete_name(name):
     if db.has_name(name):
         db.delete_name(name)
@@ -145,6 +154,7 @@ def delete_name(name):
 
 
 @app.route("/_/<name>/<int:n>", methods=['DELETE'])
+@authenticated
 def delete_pattern(name, n):
     if db.get_pattern(name, n):
         db.delete_pattern(name, n)
@@ -178,3 +188,13 @@ def jsonify_item(db, name):
     "Convert one item into the JSON we send in API responses."
     patterns = [{'pattern': p, 'args': n} for n, p in db.get_patterns(name)]
     return {'name': name, 'patterns': patterns}
+
+
+def authenticate():
+    auth_endpoint = disco['authorization_endpoint']
+    client_id = config['client_id']
+    uri       = config['redirect_uris'][0]
+
+    state     = urandom(16).hex()
+    nonce     = urandom(8).hex()
+    return redirect(authentication_url(auth_endpoint, client_id, uri, state, nonce)), 302
