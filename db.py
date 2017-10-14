@@ -155,4 +155,4 @@ def expand(list, size):
 
 
 def shrink(list):
-    while list[-1] is None: list.pop()
+    while list and list[-1] is None: list.pop()
