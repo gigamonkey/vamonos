@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from base64 import b64decode
+from base64 import urlsafe_b64decode
 from os import urandom
 from urllib.error import HTTPError
 from urllib.parse import urlencode
@@ -64,7 +64,7 @@ def postback(token_endpoint, code, client_id, client_secret, redirect_uri):
 def decode_jwt(jwt):
 
     def decode(x, text=True):
-        bs = b64decode(pad(x))
+        bs = urlsafe_b64decode(pad(x))
         return json.loads(bs.decode('utf-8')) if text else bs.hex()
 
     def pad(s):
