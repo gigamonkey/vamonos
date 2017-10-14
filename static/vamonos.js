@@ -15,8 +15,7 @@
 
   function maybeAddNewName(p, db) {
     if (p != '/') {
-      name = p.substring(1, p.indexOf('/', 1))
-      $('body').append(newNameSection(name, db));
+      newNameSection(p.substring(1, p.indexOf('/', 1)), db);
       history.replaceState({}, '', '/');
     }
   }
@@ -28,7 +27,8 @@
                .append('No links for ')
                .append($('<b>').text(name))
                .append('. Where would you like it to redirect?'));
-    div.append($('<p>').addClass('new-link').append(makeForm(name, div)));
+    var input = makeURLInput(name, div);
+    div.append($('<p>').addClass('new-link').append(input));
     div.append($('<p>').text('Or did you maybe mean one of these?'));
 
     let suggestions = $('<p>').addClass('suggestions');
@@ -43,8 +43,9 @@
       x = items.next();
       if (!x.done) suggestions.append(' | ');
     }
-
-    return div.append(suggestions).addClass('new-name');
+    div.append(suggestions).addClass('new-name');
+    $('body').append(div);
+    input.focus();
   }
 
   function nameSection(item) {
@@ -71,6 +72,20 @@
   }
 
   function makeForm(name, div) {
+    let i = $('<i>')
+        .addClass('add')
+        .addClass('fa')
+        .addClass('fa-plus-circle')
+        .attr('aria-hidden', true)
+        .click(function () {
+          var input = makeURLInput(name, div);
+          i.replaceWith(input);
+          input.focus();
+        });
+    return i;
+  }
+
+  function makeURLInput(name, div) {
     return $('<input>').addClass('url-input').change(function (x) {
       postPattern(name, div, $(x.target).val());
     });

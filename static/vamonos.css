@@ -6,13 +6,16 @@ body {
     margin-right: auto;
 }
 
-
-.delete {
-    font-size: 10px;
+.delete,.add {
+    font-size: 12px;
     vertical-align: middle;
     padding: 2px;
+}
+
+.delete {
     margin-left: 6px;
 }
+
 
 li {
     padding-top: 6px;
