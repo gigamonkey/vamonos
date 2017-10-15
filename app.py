@@ -12,9 +12,9 @@ import re
 
 # TODO:
 #
-# - Hook up to Google authentication (https://developers.google.com/identity/protocols/OpenIDConnect)
+# - Harden authentication.
 
-discovery_url     = 'https://accounts.google.com/.well-known/openid-configuration'
+discovery_url = 'https://accounts.google.com/.well-known/openid-configuration'
 oauth_config_file = 'oauth-config.json'
 
 app = Flask(__name__)
