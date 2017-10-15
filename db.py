@@ -4,6 +4,13 @@ from functools import wraps
 from os import fsync, SEEK_SET, SEEK_END
 import json
 
+def accessor(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        args[0]._refresh()
+        return f(*args, **kwargs)
+    return wrapper
+
 class DB:
 
     """\
@@ -112,24 +119,24 @@ startup.
 
     # Accessors -- must check for new entries in log.
 
+    @accessor
     def has_name(self, name):
-        self._refresh()
         return name in self.cache
 
+    @accessor
     def get_patterns(self, name):
-        self._refresh()
         return [(n, p) for n, p in enumerate(self.cache[name]) if p is not None]
 
+    @accessor
     def has_pattern(self, name, n):
-        self._refresh()
         return n < len(self.cache[name]) and self.cache[name][n] is not None
 
+    @accessor
     def get_pattern(self, name, n):
-        self._refresh()
         return self.cache[name][n]
 
+    @accessor
     def names(self):
-        self._refresh()
         return self.cache.keys()
 
     # Mutators -- write entries to log.
