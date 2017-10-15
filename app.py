@@ -1,4 +1,4 @@
-from auth import init, authentication_url, postback
+from auth import init, auth_url, postback
 from db import DB
 from flask import Flask, redirect, request, send_file, session
 from flask.json import jsonify
@@ -23,6 +23,7 @@ app.secret_key = urandom(12)
 db = DB("testdb")
 
 disco, config = init(discovery_url, oauth_config_file)
+
 
 def authenticated(f):
     @wraps(f)
@@ -83,20 +84,21 @@ def auth():
     client_id      = config['client_id']
     client_secret  = config['client_secret']
     uri            = config['redirect_uris'][0]
-    x = postback(token_endpoint, code, client_id, client_secret, uri)
+
+    resp = postback(token_endpoint, code, client_id, client_secret, uri)
 
     # TODO: Check nonce hasn't been seen before, etc. and then return
     # a redirect to wherever they were trying to go (recorded in
     # state) when we forced the authentication.
 
-    if x is not None:
-        jwt = x['jwt']['payload']
+    if resp is not None:
+        jwt = resp['jwt']['payload']
         session['authenticated'] = True
         session['email'] = jwt['email']
         session['domain'] = jwt['hd'] if 'hd' in jwt else ''
         return redirect('/')
     else:
-        return jsonify({'args': args, 'returned': x}), 401
+        return jsonify({'args': args, 'response': resp}), 401
 
 
 @app.route("/!/logout", methods=['GET'])
@@ -108,7 +110,8 @@ def logout():
 @app.route("/!/user", methods=['GET'])
 @authenticated
 def user():
-    return jsonify({'email': session['email'], 'domain': session['domain']}), 200
+    data = {'email': session['email'], 'domain': session['domain']}
+    return jsonify(data), 200
 
 
 #
@@ -213,10 +216,10 @@ def jsonify_item(db, name):
 def authenticate():
     auth_endpoint = disco['authorization_endpoint']
     client_id = config['client_id']
-    uri       = config['redirect_uris'][0]
+    uri = config['redirect_uris'][0]
 
-    state     = urandom(16).hex()
-    nonce     = urandom(8).hex()
+    state = urandom(16).hex()
+    nonce = urandom(8).hex()
 
     session['state'] = state
-    return redirect(authentication_url(auth_endpoint, client_id, uri, state, nonce)), 302
+    return redirect(auth_url(auth_endpoint, client_id, uri, state, nonce)), 302

@@ -5,22 +5,26 @@ from urllib.request import urlopen, Request
 import json
 
 discovery_url = 'https://accounts.google.com/.well-known/openid-configuration'
-config_file   = 'oauth-config.json'
+config_file = 'oauth-config.json'
+
 
 def init(url, file):
-    disco  = discovery(discovery_url)
+    disco = discovery(discovery_url)
     config = oauth_config(config_file)
     return disco, config['web']
+
 
 def oauth_config(file):
     with open(file) as f:
         return json.load(f)
 
+
 def discovery(url):
     with urlopen(url) as f:
         return json.loads(f.read().decode('utf-8'))
 
-def authentication_url(auth_endpoint, client_id, uri, state, nonce):
+
+def auth_url(auth_endpoint, client_id, uri, state, nonce):
 
     args = {
         'client_id': client_id,
@@ -33,6 +37,7 @@ def authentication_url(auth_endpoint, client_id, uri, state, nonce):
     }
 
     return auth_endpoint + '?' + urlencode(args)
+
 
 def postback(token_endpoint, code, client_id, client_secret, redirect_uri):
     data = {
