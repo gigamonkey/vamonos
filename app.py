@@ -1,3 +1,5 @@
+from urllib.parse import quote, unquote
+from base64 import b64decode, b64encode
 from auth import init, auth_url, postback
 from db import DB
 from flask import Flask, redirect, request, send_file, session
@@ -96,7 +98,7 @@ def auth():
         session['authenticated'] = True
         session['email'] = jwt['email']
         session['domain'] = jwt['hd'] if 'hd' in jwt else ''
-        return redirect('/')
+        return redirect(decode_state(session['state']))
     else:
         return jsonify({'args': args, 'response': resp}), 401
 
@@ -218,8 +220,14 @@ def authenticate():
     client_id = config['client_id']
     uri = config['redirect_uris'][0]
 
-    state = urandom(16).hex()
+    state = encode_state(request.url)
     nonce = urandom(8).hex()
 
     session['state'] = state
     return redirect(auth_url(auth_endpoint, client_id, uri, state, nonce)), 302
+
+def encode_state(url):
+    return quote(urandom(16).hex() + request.url)
+
+def decode_state(state):
+    return unquote(state)[32:]
