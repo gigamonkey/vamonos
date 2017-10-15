@@ -70,7 +70,7 @@ def decode_jwt(jwt):
         return json.loads(bs.decode('utf-8')) if text else bs.hex()
 
     def pad(s):
-        return s + ('=' * ((4 - len(s) % 4) % 4))
+        return s + ('=' * (- len(s) % 4))
 
     header, payload, mac = jwt.split('.')
 
