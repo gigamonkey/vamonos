@@ -11,6 +11,12 @@ def accessor(f):
         return f(*args, **kwargs)
     return wrapper
 
+def mutator(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        args[0]._log(f(*args, **kwargs))
+    return wrapper
+
 class DB:
 
     """\
@@ -40,7 +46,7 @@ startup.
     def _replay(self, entry):
         pass
 
-    def _log(self, *entry):
+    def _log(self, entry):
         "Log data to our transaction log."
         self.log.write('\t'.join([str(x) for x in entry]))
 
@@ -84,14 +90,7 @@ startup.
 
 class LinkDB (DB):
 
-    """\
-A database implementation that sits on top of a write-ahead log and an
-in-memory cache. Mutations to the database are written to the log and
-all reads first replay any new log entries to make sure the cache is
-up to date with any changes made by this or other processes. We also
-write out the cache to disk to avoid having to replay the whole log at
-startup.
-    """
+    "Database of link shortcuts."
 
     def empty_cache(self):
         return defaultdict(list)
@@ -141,14 +140,17 @@ startup.
 
     # Mutators -- write entries to log.
 
+    @mutator
     def delete_name(self, name):
-        self._log('DELETE_NAME', name, '*', '*')
+        return ('DELETE_NAME', name, '*', '*')
 
+    @mutator
     def delete_pattern(self, name, n):
-        self._log('DELETE', name, n, self.cache[name][n])
+        return ('DELETE', name, n, self.cache[name][n])
 
+    @mutator
     def set_pattern(self, name, n, pattern):
-        self._log('SET', name, n, pattern)
+        return ('SET', name, n, pattern)
 
 
 class Log:
