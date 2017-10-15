@@ -1,8 +1,8 @@
 from collections import defaultdict
 from fcntl import LOCK_EX, LOCK_SH, LOCK_UN, flock
+from functools import wraps
 from os import fsync, SEEK_SET, SEEK_END
 import json
-
 
 class DB:
 
@@ -22,28 +22,20 @@ startup.
             self._load()
         except:
             self.low_water_mark = 0
-            self.cache = defaultdict(list)
+            self.cache = self.empty_cache()
+
+    def empty_cache(self):
+        pass
+
+    def fill_cache(self, data):
+        pass
+
+    def _replay(self, entry):
+        pass
 
     def _log(self, *entry):
         "Log data to our transaction log."
         self.log.write('\t'.join([str(x) for x in entry]))
-
-    def _replay(self, entry):
-        "Replay a log entry to reflect it in our in-memory cache."
-        verb, name, n, pattern = entry.split('\t')
-        if verb == 'SET':
-            n = int(n)
-            expand(self.cache[name], n)
-            self.cache[name][n] = pattern
-        elif verb == 'DELETE':
-            n = int(n)
-            expand(self.cache[name], n)
-            self.cache[name][n] = None
-            shrink(self.cache[name])
-        elif verb == 'DELETE_NAME':
-            del self.cache[name]
-        else:
-            raise Error('Bad log entry: {}'.format(entry))
 
     def _refresh(self):
         "Replay any new log entries against our in-memory cache."
@@ -61,7 +53,7 @@ startup.
         with open(self.file) as f:
             flock(f, LOCK_EX)
             data = json.load(f)
-            self.cache = defaultdict(list, data['cache'])
+            self.cache = self.fill_cache(data['cache'])
             self.low_water_mark = data['low_water_mark']
             flock(f, LOCK_UN)
 
@@ -81,6 +73,42 @@ startup.
                 'low_water_mark': self.low_water_mark
             }, f, sort_keys=True, indent=2)
             flock(f, LOCK_UN)
+
+
+class LinkDB (DB):
+
+    """\
+A database implementation that sits on top of a write-ahead log and an
+in-memory cache. Mutations to the database are written to the log and
+all reads first replay any new log entries to make sure the cache is
+up to date with any changes made by this or other processes. We also
+write out the cache to disk to avoid having to replay the whole log at
+startup.
+    """
+
+    def empty_cache(self):
+        return defaultdict(list)
+
+    def fill_cache(self, data):
+        return defaultdict(list, data)
+
+    def _replay(self, entry):
+        "Replay a log entry to reflect it in our in-memory cache."
+        verb, name, n, pattern = entry.split('\t')
+        if verb == 'SET':
+            n = int(n)
+            expand(self.cache[name], n)
+            self.cache[name][n] = pattern
+        elif verb == 'DELETE':
+            n = int(n)
+            expand(self.cache[name], n)
+            self.cache[name][n] = None
+            shrink(self.cache[name])
+        elif verb == 'DELETE_NAME':
+            del self.cache[name]
+        else:
+            raise Error('Bad log entry: {}'.format(entry))
+
 
     # Accessors -- must check for new entries in log.
 

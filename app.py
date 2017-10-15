@@ -1,7 +1,7 @@
 from urllib.parse import quote, unquote
 from base64 import b64decode, b64encode
 from auth import init, auth_url, postback
-from db import DB
+from db import LinkDB
 from flask import Flask, redirect, request, send_file, session
 from flask.json import jsonify
 from functools import wraps
@@ -23,7 +23,7 @@ oauth_config_file = 'oauth-config.json'
 app = Flask(__name__)
 app.config['DEBUG'] = True
 app.secret_key = urandom(12)
-db = DB("testdb")
+db = LinkDB("testdb")
 
 disco, config = init(discovery_url, oauth_config_file)
 
