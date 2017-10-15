@@ -1,7 +1,9 @@
 from collections import defaultdict
 from fcntl import LOCK_EX, LOCK_SH, LOCK_UN, flock
 from functools import wraps
+from math import floor
 from os import fsync, SEEK_SET, SEEK_END
+from time import time
 import json
 
 def accessor(f):
@@ -38,12 +40,19 @@ startup.
             self.cache = self.empty_cache()
 
     def empty_cache(self):
+        "Return an empty cache for a new database."
         pass
 
     def fill_cache(self, data):
+        "Return a in-memory cache representing thet data loaded from disk."
         pass
 
+    def cache_to_json(self):
+        "Convert the cache to the form we want to serialize as JSON to disk."
+        return self.cache
+
     def _replay(self, entry):
+        "Replay a log entry to reflect it in our in-memory cache."
         pass
 
     def _log(self, entry):
@@ -82,7 +91,7 @@ startup.
         with open(self.file, 'w') as f:
             flock(f, LOCK_EX)
             json.dump({
-                'cache': self.cache,
+                'cache': self.cache_to_json(),
                 'low_water_mark': self.low_water_mark
             }, f, sort_keys=True, indent=2)
             flock(f, LOCK_UN)
@@ -151,6 +160,68 @@ class LinkDB (DB):
     @mutator
     def set_pattern(self, name, n, pattern):
         return ('SET', name, n, pattern)
+
+class NonceDB (DB):
+
+    "Database of nonces we've seen."
+
+    def empty_cache(self):
+        return defaultdict(set)
+
+    def fill_cache(self, data):
+        return defaultdict(set, { k:set(v) for k, v in data.items() })
+
+    def cache_to_json(self):
+        return { k:list(v) for k, v in self.cache.items() }
+
+    def timekey(self, t):
+        return str(300 + ((floor(t) // 300) * 300))
+
+
+    # Accessors
+
+    @accessor
+    def used(self, t, nonce):
+        # Time recorded in nonce goes to a particular bucket. If the
+        # bucket is the current bucket but it doesn't contain the
+        # nonce, then we haven't seen it. If it's any other bucket
+        # then we consider it to have been seen.
+
+        current = self.timekey(time())
+        expired = self.timekey(t) != current
+        seen = expired or nonce in self.cache[current]
+
+        if not seen: self.add_nonce(t, nonce)
+
+        # While we're here, expire old nonces.
+        for k in self.cache.keys():
+            if k != current:
+                self.delete_chunk(k)
+
+        print('checking nonce: {}; t: {}; current: {}; timekey: {}; expired: {}; seen: {}'.format(
+            nonce, t, current, self.timekey(t), expired, seen))
+        return seen
+
+
+    # Mutators
+
+    @mutator
+    def add_nonce(self, t, nonce):
+        return ['ADD_NONCE', t, nonce]
+
+    @mutator
+    def delete_chunk(self, chunk):
+        return ['DELETE_CHUNK', chunk]
+
+    def _replay(self, entry):
+        verb, rest = entry.split('\t', maxsplit=1)
+        if verb == 'ADD_NONCE':
+            time, nonce = rest.split('\t')
+            self.cache[self.timekey(int(time))].add(nonce)
+        elif verb == 'DELETE_CHUNK':
+            del self.cache[rest]
+        else:
+            raise Error('Bad log entry: {}'.format(entry))
 
 
 class Log:

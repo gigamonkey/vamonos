@@ -1,11 +1,13 @@
-from urllib.parse import quote, unquote
-from base64 import b64decode, b64encode
 from auth import init, auth_url, postback
-from db import LinkDB
+from base64 import b64decode, b64encode
+from db import LinkDB, NonceDB
 from flask import Flask, redirect, request, send_file, session
 from flask.json import jsonify
 from functools import wraps
+from math import floor
 from os import urandom
+from time import time
+from urllib.parse import quote, unquote
 import json
 import re
 
@@ -15,7 +17,7 @@ import re
 # TODO:
 #
 # - Domain checking
-# - Check nonce.
+# - Make multi-arg requests default to 0-arg pattern + rest.
 
 discovery_url = 'https://accounts.google.com/.well-known/openid-configuration'
 oauth_config_file = 'oauth-config.json'
@@ -24,6 +26,7 @@ app = Flask(__name__)
 app.config['DEBUG'] = True
 app.secret_key = urandom(12)
 db = LinkDB("testdb")
+nonces = NonceDB("nonces")
 
 disco, config = init(discovery_url, oauth_config_file)
 
@@ -90,16 +93,19 @@ def auth():
 
     resp = postback(token_endpoint, code, client_id, client_secret, uri)
 
-    # TODO: Check nonce hasn't been seen before, etc. and then return
-    # a redirect to wherever they were trying to go (recorded in
-    # state) when we forced the authentication.
-
     if resp is not None:
         jwt = resp['jwt']['payload']
-        session['authenticated'] = True
-        session['email'] = jwt['email']
-        session['domain'] = jwt['hd'] if 'hd' in jwt else ''
-        return redirect(decode_state(session['state']))
+
+        nonce = jwt['nonce']
+
+        if nonces.used(nonce_time(nonce), nonce):
+            return jsonify("Reused nonce"), 401
+        else:
+            session['authenticated'] = True
+            session['email'] = jwt['email']
+            session['domain'] = jwt['hd'] if 'hd' in jwt else ''
+            return redirect(decode_state(session['state']))
+
     else:
         return jsonify({'args': args, 'response': resp}), 401
 
@@ -221,13 +227,19 @@ def authenticate():
     uri = config['redirect_uris'][0]
 
     state = encode_state(request.url)
-    nonce = urandom(8).hex()
+    nonce = urandom(8).hex() + str(floor(time()))
 
     session['state'] = state
     return redirect(auth_url(auth_endpoint, client_id, uri, state, nonce)), 302
 
+
 def encode_state(url):
     return quote(urandom(16).hex() + request.url)
 
+
 def decode_state(state):
     return unquote(state)[32:]
+
+
+def nonce_time(nonce):
+    return int(nonce[16:])
