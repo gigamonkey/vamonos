@@ -14,7 +14,8 @@ import re
 
 # TODO:
 #
-# - Harden authentication.
+# - Domain checking
+# - Check nonce.
 
 discovery_url = 'https://accounts.google.com/.well-known/openid-configuration'
 oauth_config_file = 'oauth-config.json'
@@ -129,7 +130,6 @@ def redirection(name, rest):
     if db.has_pattern(name, len(args)):
         return redirect(db.get_pattern(name, len(args)).format(*args)), 307
     else:
-        # TODO: need to check login here.
         return send_file('static/index.html')
 
 
