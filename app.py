@@ -61,12 +61,22 @@ def index():
 
 @app.route("/!/auth", methods=['GET'])
 def auth():
-    "Gets the second step of the OAuth dance."
+    "The second step of the OAuth dance."
     args = request.args
 
+    # The browser is redirected to this endpoint by Google and will
+    # pass us the state we embedded in the URL we redirected them to
+    # in step one of the dance. We need to check that the state we are
+    # receiving now is one we handed out before, otherwise anyone
+    # could hit this endpoint, pretending to have been redirected
+    # here. They probably wouldn't be able to authenticate since they
+    # wouldn't have a valid code to give us (which we will then POST
+    # to google). It seems sufficient to put the state we are
+    # expecting into our session before we redirect them in step one
+    # since sessions are not forgeable.
 
-    # TODO: Check state in args['state'] to make sure it matches what
-    # we sent in redirect.
+    if 'state' not in session or args['state'] != session['state']:
+        return 'Bad state', 401
 
     token_endpoint = disco['token_endpoint']
     code           = args['code']
@@ -80,21 +90,25 @@ def auth():
     # state) when we forced the authentication.
 
     if x is not None:
+        jwt = x['jwt']['payload']
         session['authenticated'] = True
-        session['email'] = x['jwt']['payload']['email']
+        session['email'] = jwt['email']
+        session['domain'] = jwt['hd'] if 'hd' in jwt else ''
         return redirect('/')
     else:
         return jsonify({'args': args, 'returned': x}), 401
+
 
 @app.route("/!/logout", methods=['GET'])
 def logout():
     session['authenticated'] = False
     return "Okay", 200
 
+
 @app.route("/!/user", methods=['GET'])
 @authenticated
 def user():
-    return jsonify(session['email']), 200
+    return jsonify({'email': session['email'], 'domain': session['domain']}), 200
 
 
 #
@@ -203,4 +217,6 @@ def authenticate():
 
     state     = urandom(16).hex()
     nonce     = urandom(8).hex()
+
+    session['state'] = state
     return redirect(authentication_url(auth_endpoint, client_id, uri, state, nonce)), 302

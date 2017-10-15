@@ -5,8 +5,8 @@
     $.ajax('/!/user', { success: showEmail });
   }
 
-  function showEmail(n) {
-    $('body').prepend($('<div>').addClass('login').append($('<span>').text(n)));
+  function showEmail(x) {
+    $('body').prepend($('<div>').addClass('login').append($('<span>').text(x.email + ' (domain: ' + x.domain + ')')));
   }
 
   function addNamesFromDB (db) {
