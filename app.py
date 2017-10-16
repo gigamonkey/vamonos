@@ -135,6 +135,8 @@ def redirection(name, rest):
     args = rest.split('/') if rest else []
     if db.has_pattern(name, len(args)):
         return redirect(db.get_pattern(name, len(args)).format(*args)), 307
+    elif db.has_pattern(name, 0):
+        return redirect(ensure_slash(db.get_pattern(name, 0)) + rest), 307
     else:
         return send_file('static/index.html')
 
@@ -243,3 +245,7 @@ def decode_state(state):
 
 def nonce_time(nonce):
     return int(nonce[16:])
+
+
+def ensure_slash(s):
+    return s if s[-1] == '/' else s + '/'
