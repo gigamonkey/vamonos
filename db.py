@@ -198,8 +198,6 @@ class NonceDB (DB):
             if k != current:
                 self.delete_chunk(k)
 
-        print('checking nonce: {}; t: {}; current: {}; timekey: {}; expired: {}; seen: {}'.format(
-            nonce, t, current, self.timekey(t), expired, seen))
         return seen
 
 
