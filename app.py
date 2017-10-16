@@ -16,11 +16,11 @@ import re
 
 # TODO:
 #
-# - Domain checking
-# - Make multi-arg requests default to 0-arg pattern + rest.
+# - Move configuration out of code.
 
 discovery_url = 'https://accounts.google.com/.well-known/openid-configuration'
 oauth_config_file = 'oauth-config.json'
+allowed_domains = {'dnc.org'}
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
@@ -97,13 +97,18 @@ def auth():
         jwt = resp['jwt']['payload']
 
         nonce = jwt['nonce']
+        hd = jwt['hd'] if 'hd' in jwt else ''
 
         if nonces.used(nonce_time(nonce), nonce):
             return jsonify("Reused nonce"), 401
+
+        elif hd not in allowed_domains:
+            return jsonify("Disallowed domain"), 401
+
         else:
             session['authenticated'] = True
             session['email'] = jwt['email']
-            session['domain'] = jwt['hd'] if 'hd' in jwt else ''
+            session['domain'] = hd
             return redirect(decode_state(session['state']))
 
     else:
