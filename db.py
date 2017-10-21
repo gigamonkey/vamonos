@@ -134,7 +134,7 @@ class LinkDB (DB):
     def names(self):
         return self.cache.keys()
 
-    # Mutators -- write entries to log.
+    # Mutators
 
     @mutator
     def delete_name(self, name):
