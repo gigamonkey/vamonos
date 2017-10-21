@@ -13,11 +13,13 @@ def accessor(f):
         return f(*args, **kwargs)
     return wrapper
 
-def mutator(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        args[0]._log(f(*args, **kwargs))
-    return wrapper
+def mutator(fn):
+    @wraps(fn)
+    def logger(self, *args, **kwargs):
+        self._log(fn.__name__, args, kwargs)
+
+    logger.replay = lambda s, a, k: fn(s, *a, **k)
+    return logger
 
 class DB:
 
@@ -51,13 +53,15 @@ startup.
         "Convert the cache to the form we want to serialize as JSON to disk."
         return self.cache
 
-    def _replay(self, entry):
+    def _replay(self, record):
         "Replay a log entry to reflect it in our in-memory cache."
-        pass
+        entry = json.loads(record)
+        getattr(self.__class__, entry['name']).replay(self, entry['args'], entry['kwargs'])
 
-    def _log(self, entry):
+    def _log(self, name, args, kwargs):
         "Log data to our transaction log."
-        self.log.write('\t'.join([str(x) for x in entry]))
+        entry = {'name': name, 'args': args, 'kwargs': kwargs}
+        self.log.write(json.dumps(entry))
 
     def _refresh(self):
         "Replay any new log entries against our in-memory cache."
@@ -107,23 +111,6 @@ class LinkDB (DB):
     def fill_cache(self, data):
         return defaultdict(list, data)
 
-    def _replay(self, entry):
-        "Replay a log entry to reflect it in our in-memory cache."
-        verb, name, n, pattern = entry.split('\t')
-        if verb == 'SET':
-            n = int(n)
-            expand(self.cache[name], n)
-            self.cache[name][n] = pattern
-        elif verb == 'DELETE':
-            n = int(n)
-            expand(self.cache[name], n)
-            self.cache[name][n] = None
-            shrink(self.cache[name])
-        elif verb == 'DELETE_NAME':
-            del self.cache[name]
-        else:
-            raise Error('Bad log entry: {}'.format(entry))
-
 
     # Accessors -- must check for new entries in log.
 
@@ -151,15 +138,18 @@ class LinkDB (DB):
 
     @mutator
     def delete_name(self, name):
-        return ('DELETE_NAME', name, '*', '*')
+        del self.cache[name]
 
     @mutator
     def delete_pattern(self, name, n):
-        return ('DELETE', name, n, self.cache[name][n])
+        expand(self.cache[name], n)
+        self.cache[name][n] = None
+        shrink(self.cache[name])
 
     @mutator
     def set_pattern(self, name, n, pattern):
-        return ('SET', name, n, pattern)
+        expand(self.cache[name], n)
+        self.cache[name][n] = pattern
 
 class NonceDB (DB):
 
@@ -205,21 +195,11 @@ class NonceDB (DB):
 
     @mutator
     def add_nonce(self, t, nonce):
-        return ['ADD_NONCE', t, nonce]
+        self.cache[self.timekey(t)].add(nonce)
 
     @mutator
     def delete_chunk(self, chunk):
-        return ['DELETE_CHUNK', chunk]
-
-    def _replay(self, entry):
-        verb, rest = entry.split('\t', maxsplit=1)
-        if verb == 'ADD_NONCE':
-            time, nonce = rest.split('\t')
-            self.cache[self.timekey(int(time))].add(nonce)
-        elif verb == 'DELETE_CHUNK':
-            del self.cache[rest]
-        else:
-            raise Error('Bad log entry: {}'.format(entry))
+        del self.cache[rest]
 
 
 class Log:
@@ -240,17 +220,19 @@ class Log:
             return f.tell()
 
     def read(self, low_water_mark):
-        with open(self.file, mode='r') as f:
-            flock(f, LOCK_SH)
-            f.seek(low_water_mark, SEEK_SET)
-            while True:
-                line = f.readline()
-                pos = f.tell()
-                if line == '':
-                    break
-                yield line[:-1], pos
-            flock(f, LOCK_UN)
-
+        try:
+            with open(self.file, mode='r') as f:
+                flock(f, LOCK_SH)
+                f.seek(low_water_mark, SEEK_SET)
+                while True:
+                    line = f.readline()
+                    pos = f.tell()
+                    if line == '':
+                        break
+                    yield line[:-1], pos
+                flock(f, LOCK_UN)
+        except:
+            yield from []
 
 #
 # Utilities
