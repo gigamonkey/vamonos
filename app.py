@@ -233,15 +233,15 @@ def authenticate():
     client_id = config['client_id']
     uri = config['redirect_uris'][0]
 
-    state = encode_state(request.url)
+    state = encode_state(request.path)
     nonce = urandom(8).hex() + str(floor(time()))
 
     session['state'] = state
     return redirect(auth_url(auth_endpoint, client_id, uri, state, nonce)), 302
 
 
-def encode_state(url):
-    return quote(urandom(16).hex() + request.url)
+def encode_state(path):
+    return quote(urandom(16).hex() + path)
 
 
 def decode_state(state):
