@@ -199,7 +199,7 @@ class NonceDB (DB):
 
     @mutator
     def delete_chunk(self, chunk):
-        del self.cache[rest]
+        del self.cache[chunk]
 
 
 class Log:
