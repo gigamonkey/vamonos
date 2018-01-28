@@ -136,7 +136,7 @@ def user():
 @app.route("/<name>/<path:rest>")
 @authenticated
 def redirection(name, rest):
-    name = ''.join(filter(str.isalnum, name))
+    name = normalize(name)
     args = rest.split('/') if rest else []
     if db.has_pattern(name, len(args)):
         return redirect(db.get_pattern(name, len(args)).format(*args)), 307
@@ -159,7 +159,8 @@ def get_all():
 @app.route("/_/<name>", methods=['GET'])
 @authenticated
 def get_name(name):
-    if db.has_name(name):
+    normalized = normalize(name)
+    if db.has_name(normalized):
         return jsonify(jsonify_item(db, name))
     else:
         return jsonify({}), 404
@@ -168,6 +169,7 @@ def get_name(name):
 @app.route("/_/<name>", methods=['POST'])
 @authenticated
 def post_pattern(name):
+    normalized = normalize(name)
     pattern = request.form['pattern']
     n = count_args(pattern)
     if n is None:
@@ -254,3 +256,7 @@ def nonce_time(nonce):
 
 def ensure_slash(s):
     return s if s[-1] == '/' else s + '/'
+
+
+def normalize(name):
+    return ''.join(filter(str.isalnum, name))
