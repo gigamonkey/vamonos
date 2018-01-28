@@ -12,5 +12,5 @@ This one does have a few features that I care about:
 ```bash
 virtualenv venv
 source ./venv/bin/activate
-pip3 install -r requirements
+pip3 install -r requirements.txt
 ```
