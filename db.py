@@ -46,7 +46,7 @@ startup.
         pass
 
     def fill_cache(self, data):
-        "Return a in-memory cache representing thet data loaded from disk."
+        "Return a in-memory cache representing the data loaded from disk."e
         pass
 
     def cache_to_json(self):
